@@ -2,8 +2,6 @@
 
 Find which Passport To Your National Parks® stamp set contains your favorite park. Search by park name, year, or region.
 
-[View Live Site](https://oldcrowew.github.io/nps-stamps) | [View Source](https://github.com/oldcrowew/nps-stamps)
-
 ## Features
 
 - 🔍 **Instant Search** - Real-time search with autocomplete suggestions
