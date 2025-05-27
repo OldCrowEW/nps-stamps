@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Park Passport Finder - Find Your National Park Stickers</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Find which Passport To Your National Parks® stamp set contains your favorite park. Search by park name, year, or region.">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="#" style="color: white; text-decoration: none;">Park Passport Finder</a></h1>
+            <p class="tagline">Find your National Park passport stickers by park, year, or region</p>
+            <nav class="header-nav">
+                <a href="#series" data-route="series">Series Overview</a>
+                <a href="#" data-route="">Browse All</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Detail Section (Hidden by default) -->
+            <section class="detail-section" id="detailSection" style="display: none;">
+                <div id="detailContent" class="detail-content"></div>
+            </section>
+
+            <!-- Search Section -->
+            <section class="search-section" id="searchSection">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search for a park name..."
+                        autocomplete="off"
+                    >
+                    <div id="searchSuggestions" class="suggestions"></div>
+                </div>
+                
+                <div class="filters">
+                    <select id="yearFilter">
+                        <option value="">All Years</option>
+                    </select>
+                    
+                    <select id="regionFilter">
+                        <option value="">All Regions</option>
+                        <option value="National">National Stamp</option>
+                        <option value="North Atlantic">North Atlantic</option>
+                        <option value="Mid-Atlantic">Mid-Atlantic</option>
+                        <option value="National Capital">National Capital</option>
+                        <option value="Southeast">Southeast</option>
+                        <option value="Midwest">Midwest</option>
+                        <option value="Southwest">Southwest</option>
+                        <option value="Rocky Mountain">Rocky Mountain</option>
+                        <option value="Western">Western</option>
+                        <option value="Pacific Northwest & Alaska">Pacific Northwest & Alaska</option>
+                    </select>
+                    
+                    <button id="clearFilters" class="clear-btn">Clear Filters</button>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection">
+                <div id="resultsCount" class="results-count"></div>
+                <div id="resultsContainer" class="results-grid"></div>
+            </section>
+
+            <!-- Browse Section -->
+            <section class="browse-section" id="browseSection">
+                <h2>Browse Stamp Collection</h2>
+                <div class="browse-tabs">
+                    <button class="tab-btn active" data-view="timeline">By Year</button>
+                    <button class="tab-btn" data-view="alphabetical">By Park Name</button>
+                    <button class="tab-btn" data-view="region">By Region</button>
+                </div>
+                <div id="browseContainer" class="browse-container"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Data sourced from the official Passport To Your National Parks® program</p>
+            <p>100% of proceeds from stamp purchases support America's national parks</p>
+            <p><a href="https://shop.americasnationalparks.org" target="_blank" rel="noopener">Visit Official Store</a></p>
+        </div>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 
