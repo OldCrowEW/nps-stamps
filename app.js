@@ -63,6 +63,7 @@ class ParkPassportFinder {
         // Show detail section for detail views
         document.getElementById('detailSection').style.display = 'block';
         
+        const container = document.getElementById('detailContent');
         switch(type) {
             case 'year':
                 this.showYearDetail(params[0]);
@@ -75,7 +76,22 @@ class ParkPassportFinder {
                 this.showRegionDetail(decodeURIComponent(params.join('/')));
                 break;
             case 'series':
-                this.showSeriesOverview();
+                // Handle subroutes for series
+                if (params[0] === 'years') {
+                    // Render all years index
+                    container.innerHTML = '<h2>All Stamp Series by Year</h2><div id="seriesYearsList"></div>';
+                    this.renderTimelineView(document.getElementById('seriesYearsList'));
+                } else if (params[0] === 'regions') {
+                    // Render all regions index
+                    container.innerHTML = '<h2>All Stamp Series by Region</h2><div id="seriesRegionsList"></div>';
+                    this.renderRegionView(document.getElementById('seriesRegionsList'));
+                } else if (params[0] === 'parks') {
+                    // Render all parks index
+                    container.innerHTML = '<h2>All Stamp Series by Park</h2><div id="seriesParksList"></div>';
+                    this.renderAlphabeticalView(document.getElementById('seriesParksList'));
+                } else {
+                    this.showSeriesOverview();
+                }
                 break;
             default:
                 this.showBrowseView('timeline');
@@ -149,9 +165,9 @@ class ParkPassportFinder {
         const appearanceCards = parkAppearances.map(appearance => {
             const otherStamps = appearance.yearData.stamps.filter(s => s.park !== parkName);
             return `
-                <div class="appearance-card">
+                <div class="appearance-card" data-route="year/${appearance.year}">
                     <div class="appearance-header">
-                        <h3 data-route="year/${appearance.year}" class="clickable-year">${appearance.year}</h3>
+                        <h3 class="clickable-year">${appearance.year}</h3>
                         <span class="stamp-region-badge ${appearance.region === 'National' ? 'national' : ''}">${appearance.region}</span>
                     </div>
                     <div class="appearance-image" data-route="year/${appearance.year}">
@@ -367,11 +383,34 @@ class ParkPassportFinder {
         document.body.addEventListener('click', (e) => {
             const routeElement = e.target.closest('[data-route]');
             if (routeElement) {
-                e.preventDefault();
-                e.stopPropagation();
-                const route = routeElement.getAttribute('data-route');
-                if (route) {
-                    this.navigateTo(route);
+                // If it's a park link, region title, or mini-park-pill, allow navigation
+                if (
+                    routeElement.classList.contains('mini-park-pill') ||
+                    routeElement.classList.contains('park-pill') ||
+                    routeElement.classList.contains('region-title')
+                ) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const route = routeElement.getAttribute('data-route');
+                    if (route) {
+                        window.parkFinder.navigateTo(route);
+                    }
+                    return;
+                }
+                // If it's an appearance-card, but NOT clicking on .mini-park-pill, .appearance-image img, or .stamp-link, navigate to year
+                if (
+                    routeElement.classList.contains('appearance-card') &&
+                    !e.target.closest('.mini-park-pill') &&
+                    !e.target.closest('.appearance-image img') &&
+                    !e.target.closest('.stamp-link')
+                ) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const route = routeElement.getAttribute('data-route');
+                    if (route) {
+                        window.parkFinder.navigateTo(route);
+                    }
+                    return;
                 }
             }
         });
@@ -393,12 +432,14 @@ class ParkPassportFinder {
         if (!query.trim()) {
             this.hideSuggestions();
             this.clearResults();
+            showBrowseSection(true);
             return;
         }
 
         const searchResults = this.searchParks(query);
         this.displaySuggestions(searchResults, query);
         this.displayResults(searchResults);
+        showBrowseSection(false);
     }
 
     searchParks(query) {
@@ -483,6 +524,14 @@ class ParkPassportFinder {
     displayResults(results) {
         const container = document.getElementById('resultsContainer');
         container.innerHTML = '';
+
+        // Hide browse section if there are results or a search is active
+        const searchInput = document.getElementById('searchInput');
+        if (results.length > 0 || (searchInput && searchInput.value.trim())) {
+            showBrowseSection(false);
+        } else {
+            showBrowseSection(true);
+        }
 
         if (results.length === 0) {
             container.innerHTML = `
@@ -584,6 +633,13 @@ class ParkPassportFinder {
             });
         });
 
+        // Hide browse section if any filter is active
+        if (yearFilter || regionFilter || searchQuery) {
+            showBrowseSection(false);
+        } else {
+            showBrowseSection(true);
+        }
+
         this.displayResults(results);
     }
 
@@ -593,6 +649,7 @@ class ParkPassportFinder {
         document.getElementById('searchInput').value = '';
         this.clearResults();
         this.updateResultsCount();
+        showBrowseSection(true);
     }
 
     clearResults() {
@@ -883,6 +940,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.stamp-set-image-large img').forEach(img => {
             img.style.cursor = 'zoom-in';
             img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
                 console.log('[DEBUG] Year detail image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
@@ -891,6 +950,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.appearance-image img').forEach(img => {
             img.style.cursor = 'zoom-in';
             img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
                 console.log('[DEBUG] Park detail image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
@@ -899,6 +960,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.timeline-image-container img').forEach(img => {
             img.style.cursor = 'zoom-in';
             img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
                 console.log('[DEBUG] Timeline image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
@@ -936,4 +999,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(attachZoomListeners, 0);
     });
-})(); 
+})();
+
+function showBrowseSection(show) {
+    const browseSection = document.getElementById('browseSection');
+    if (browseSection) browseSection.style.display = show ? '' : 'none';
+} 
