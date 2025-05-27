@@ -1195,4 +1195,72 @@ footer a:hover {
 .stamp-item[data-stamp-index="5"] .stamp-item-image {
     aspect-ratio: 1/2;
     height: auto;
+}
+
+/* Image Zoom Modal Styles */
+.modal-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 10000;
+    transition: opacity 0.3s ease;
+}
+
+.modal-content {
+    position: relative;
+    background: none;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 2rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: var(--shadow);
+    transition: background 0.2s;
+}
+.modal-close:hover {
+    background: rgba(255,255,255,1);
+}
+
+#modalImage {
+    max-width: 80vw;
+    max-height: 80vh;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    background: white;
+    margin: 0 auto;
+    display: block;
+}
+
+@media (max-width: 600px) {
+    .modal-content {
+        max-width: 98vw;
+        max-height: 98vh;
+    }
+    #modalImage {
+        max-width: 95vw;
+        max-height: 70vh;
+    }
 } 

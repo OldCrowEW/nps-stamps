@@ -1,3 +1,4 @@
+console.log('[DEBUG] app.js loaded');
 // Park Passport Finder Application
 class ParkPassportFinder {
     constructor() {
@@ -795,4 +796,144 @@ class ParkPassportFinder {
 document.addEventListener('DOMContentLoaded', () => {
     const parkFinder = new ParkPassportFinder();
     window.parkFinder = parkFinder;
-}); 
+});
+
+// Image Zoom Modal Logic with Robust Debugging
+(function() {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    const closeBtn = document.querySelector('.modal-close');
+    let lastFocusedElement = null;
+
+    // Open modal with given image src
+    function openModal(imgSrc, altText) {
+        console.log('[DEBUG] openModal called with src:', imgSrc, 'alt:', altText);
+        lastFocusedElement = document.activeElement;
+        modalImg.src = imgSrc;
+        modalImg.alt = altText || 'Zoomed Stamp Set';
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+        closeBtn.focus();
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close modal
+    function closeModal() {
+        console.log('[DEBUG] closeModal called');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        modalImg.src = '';
+        document.body.style.overflow = '';
+        if (lastFocusedElement) lastFocusedElement.focus();
+    }
+
+    // Click close button
+    closeBtn.addEventListener('click', function() {
+        console.log('[DEBUG] Close button clicked');
+        closeModal();
+    });
+
+    // Click outside modal content closes
+    modal.addEventListener('mousedown', function(e) {
+        if (e.target === modal) {
+            console.log('[DEBUG] Clicked outside modal content');
+            closeModal();
+        }
+    });
+
+    // ESC key closes
+    document.addEventListener('keydown', function(e) {
+        if (modal.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
+            console.log('[DEBUG] ESC key pressed');
+            closeModal();
+        }
+        // Trap focus in modal
+        if (modal.style.display === 'flex' && e.key === 'Tab') {
+            const focusable = [closeBtn, modalImg];
+            const idx = focusable.indexOf(document.activeElement);
+            if (e.shiftKey) {
+                if (idx === 0) {
+                    e.preventDefault();
+                    focusable[focusable.length - 1].focus();
+                }
+            } else {
+                if (idx === focusable.length - 1) {
+                    e.preventDefault();
+                    focusable[0].focus();
+                }
+            }
+        }
+    });
+
+    // Helper to remove all click listeners from images
+    function removeAllImageListeners(selector) {
+        document.querySelectorAll(selector).forEach(img => {
+            const newImg = img.cloneNode(true);
+            img.parentNode.replaceChild(newImg, img);
+        });
+    }
+
+    // Attach click listeners to images after each render
+    function attachZoomListeners() {
+        // Remove previous listeners to avoid duplicates
+        removeAllImageListeners('.stamp-set-image-large img');
+        removeAllImageListeners('.appearance-image img');
+        removeAllImageListeners('.timeline-image-container img');
+        // Year detail view
+        document.querySelectorAll('.stamp-set-image-large img').forEach(img => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', function(e) {
+                console.log('[DEBUG] Year detail image clicked:', img.src);
+                openModal(img.src, img.alt);
+            });
+        });
+        // Park detail view
+        document.querySelectorAll('.appearance-image img').forEach(img => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', function(e) {
+                console.log('[DEBUG] Park detail image clicked:', img.src);
+                openModal(img.src, img.alt);
+            });
+        });
+        // Timeline view
+        document.querySelectorAll('.timeline-image-container img').forEach(img => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', function(e) {
+                console.log('[DEBUG] Timeline image clicked:', img.src);
+                openModal(img.src, img.alt);
+            });
+        });
+        console.log('[DEBUG] attachZoomListeners called');
+    }
+
+    // Patch render methods to re-attach listeners
+    const origShowYearDetail = ParkPassportFinder.prototype.showYearDetail;
+    ParkPassportFinder.prototype.showYearDetail = function(year) {
+        origShowYearDetail.call(this, year);
+        setTimeout(attachZoomListeners, 0);
+    };
+    const origShowParkDetail = ParkPassportFinder.prototype.showParkDetail;
+    ParkPassportFinder.prototype.showParkDetail = function(parkName) {
+        origShowParkDetail.call(this, parkName);
+        setTimeout(attachZoomListeners, 0);
+    };
+    const origShowRegionDetail = ParkPassportFinder.prototype.showRegionDetail;
+    ParkPassportFinder.prototype.showRegionDetail = function(regionName) {
+        origShowRegionDetail.call(this, regionName);
+        setTimeout(attachZoomListeners, 0);
+    };
+    const origShowSeriesOverview = ParkPassportFinder.prototype.showSeriesOverview;
+    ParkPassportFinder.prototype.showSeriesOverview = function() {
+        origShowSeriesOverview.call(this);
+        setTimeout(attachZoomListeners, 0);
+    };
+    const origShowBrowseView = ParkPassportFinder.prototype.showBrowseView;
+    ParkPassportFinder.prototype.showBrowseView = function(view) {
+        origShowBrowseView.call(this, view);
+        setTimeout(attachZoomListeners, 0);
+    };
+    // Also attach on DOMContentLoaded for initial view
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(attachZoomListeners, 0);
+    });
+})(); 
