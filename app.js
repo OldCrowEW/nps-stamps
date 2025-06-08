@@ -1330,6 +1330,9 @@ document.addEventListener('DOMContentLoaded', () => {
         removeAllImageListeners('.stamp-set-image-large img');
         removeAllImageListeners('.appearance-image img');
         removeAllImageListeners('.timeline-image-container img');
+        removeAllImageListeners('.sticker-browse-image img');
+        removeAllImageListeners('.sticker-image');
+        
         // Year detail view
         document.querySelectorAll('.stamp-set-image-large img').forEach(img => {
             img.style.cursor = 'zoom-in';
@@ -1357,6 +1360,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 e.preventDefault();
                 console.log('[DEBUG] Timeline image clicked:', img.src);
+                openModal(img.src, img.alt);
+            });
+        });
+        // Individual stickers browse view
+        document.querySelectorAll('.sticker-browse-image img').forEach(img => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('[DEBUG] Individual sticker image clicked:', img.src);
+                openModal(img.src, img.alt);
+            });
+        });
+        // Park detail individual stickers
+        document.querySelectorAll('.sticker-image').forEach(img => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('[DEBUG] Park detail sticker image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
         });
