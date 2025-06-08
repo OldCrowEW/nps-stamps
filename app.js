@@ -1,4 +1,45 @@
 console.log('[DEBUG] app.js loaded');
+
+// Helper function to normalize park names for sticker mapping lookup
+function normalizeParkName(parkName) {
+    return parkName
+        .replace(/National Historical Park/g, 'NHP')
+        .replace(/National Historic Site/g, 'NHS') 
+        .replace(/National Park/g, 'NP')
+        .replace(/National Monument/g, 'NM')
+        .replace(/National Memorial/g, 'NM')
+        .replace(/National Battlefield Park/g, 'NBP')
+        .replace(/National Battlefield/g, 'NB')
+        .replace(/National Military Park/g, 'NMP')
+        .replace(/National Scenic River/g, 'NSR')
+        .replace(/National Wild and Scenic River/g, 'NSR')
+        .replace(/Wild & Scenic River/g, 'WSR')
+        .replace(/National Recreation Area/g, 'NRA')
+        .replace(/National Seashore/g, 'NS')
+        .replace(/National Lakeshore/g, 'NL')
+        .replace(/National Preserve/g, 'N PRES')
+        .replace(/National River and Recreation Area/g, 'NRRA')
+        .replace(/ and Preserve/g, ' and PRES')
+        .replace(/African Burial Ground/g, 'African Burial Grounds') // Handle specific case
+        .trim();
+}
+
+// Helper function to get sticker data with name normalization
+function getStickerData(parkName) {
+    // Try exact match first
+    if (window.parkStickerMapping?.[parkName]) {
+        return window.parkStickerMapping[parkName];
+    }
+    
+    // Try normalized name
+    const normalizedName = normalizeParkName(parkName);
+    if (window.parkStickerMapping?.[normalizedName]) {
+        return window.parkStickerMapping[normalizedName];
+    }
+    
+    return null;
+}
+
 // Park Passport Finder Application
 class ParkPassportFinder {
     constructor() {
@@ -72,6 +113,7 @@ class ParkPassportFinder {
                 const parkName = decodeURIComponent(params.join('/'));
                 this.showParkDetail(parkName);
                 break;
+
             case 'region':
                 this.showRegionDetail(decodeURIComponent(params.join('/')));
                 break;
@@ -161,6 +203,122 @@ class ParkPassportFinder {
         // Sort by year (newest first)
         parkAppearances.sort((a, b) => b.year - a.year);
         
+        // Get the most recent year this park appeared for the sticker image
+        const mostRecentYear = parkAppearances[0].year;
+        
+        // Check if individual sticker is available and build sticker section
+        const stickerData = getStickerData(parkName);
+        let stickerSection = '';
+        
+        if (stickerData?.hasIndividualSticker) {
+            // Handle both regular and Junior Ranger stickers
+            let stickersHtml = '';
+            
+            if (stickerData.stickerType === 'both') {
+                // Show both regular and Junior Ranger
+                stickersHtml = `
+                    <div class="stickers-grid">
+                        <div class="sticker-card">
+                            <div class="sticker-image-container">
+                                <img src="images/individual-stickers/${stickerData.imageFilename}" 
+                                     alt="${parkName} Regular Sticker" 
+                                     class="sticker-image"
+                                     loading="lazy"
+                                     onerror="this.style.display='none'; this.parentElement.querySelector('.sticker-placeholder').style.display='flex';">
+                                <div class="sticker-placeholder" style="display: none;">
+                                    <div class="placeholder-icon">🎫</div>
+                                    <p>Regular Sticker</p>
+                                </div>
+                            </div>
+                            <div class="sticker-info">
+                                <h4>Regular Passport Sticker</h4>
+                                <p class="sticker-description">${stickerData.description}</p>
+                                <div class="sticker-details">
+                                    <span class="sticker-type">Photography Design</span>
+                                </div>
+                                <a href="${stickerData.purchaseUrl}" 
+                                   target="_blank" 
+                                   rel="noopener"
+                                   class="purchase-sticker-btn">
+                                    Buy Sticker
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="sticker-card">
+                            <div class="sticker-image-container">
+                                <img src="images/individual-stickers/${stickerData.imageFilenameJuniorRanger}" 
+                                     alt="${parkName} Junior Ranger Sticker" 
+                                     class="sticker-image"
+                                     loading="lazy"
+                                     onerror="this.style.display='none'; this.parentElement.querySelector('.sticker-placeholder').style.display='flex';">
+                                <div class="sticker-placeholder" style="display: none;">
+                                    <div class="placeholder-icon">🎨</div>
+                                    <p>Junior Ranger Sticker</p>
+                                </div>
+                            </div>
+                            <div class="sticker-info">
+                                <h4>Junior Ranger Sticker</h4>
+                                <p class="sticker-description">${stickerData.descriptionJuniorRanger}</p>
+                                <div class="sticker-details">
+                                    <span class="sticker-type">Artistic Design by David Klug</span>
+                                </div>
+                                <a href="${stickerData.purchaseUrlJuniorRanger}" 
+                                   target="_blank" 
+                                   rel="noopener"
+                                   class="purchase-sticker-btn">
+                                    Buy Jr. Ranger
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Show single sticker type
+                const isJuniorRanger = stickerData.stickerType === 'junior-ranger';
+                stickersHtml = `
+                    <div class="stickers-grid single-sticker">
+                        <div class="sticker-card">
+                            <div class="sticker-image-container">
+                                <img src="images/individual-stickers/${stickerData.imageFilename}" 
+                                     alt="${parkName} ${isJuniorRanger ? 'Junior Ranger' : 'Regular'} Sticker" 
+                                     class="sticker-image"
+                                     loading="lazy"
+                                     onerror="this.style.display='none'; this.parentElement.querySelector('.sticker-placeholder').style.display='flex';">
+                                <div class="sticker-placeholder" style="display: none;">
+                                    <div class="placeholder-icon">${isJuniorRanger ? '🎨' : '🎫'}</div>
+                                    <p>${isJuniorRanger ? 'Junior Ranger' : 'Regular'} Sticker</p>
+                                </div>
+                            </div>
+                            <div class="sticker-info">
+                                <h4>${isJuniorRanger ? 'Junior Ranger Sticker' : 'Regular Passport Sticker'}</h4>
+                                <p class="sticker-description">${stickerData.description}</p>
+                                <div class="sticker-details">
+                                    <span class="sticker-type">${isJuniorRanger ? 'Artistic Design by David Klug' : 'Photography Design'}</span>
+                                </div>
+                                <a href="${stickerData.purchaseUrl}" 
+                                   target="_blank" 
+                                   rel="noopener"
+                                   class="purchase-sticker-btn">
+                                    Buy Sticker
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            stickerSection = `
+                <div class="individual-stickers-section">
+                    <div class="section-header">
+                        <h3>Individual Passport Stickers</h3>
+                        <p class="section-description">Official stickers designed to fit in your Passport to Your National Parks book. Available for separate purchase.</p>
+                    </div>
+                    ${stickersHtml}
+                </div>
+            `;
+        }
+        
         const container = document.getElementById('detailContent');
         const appearanceCards = parkAppearances.map(appearance => {
             const otherStamps = appearance.yearData.stamps.filter(s => s.park !== parkName);
@@ -197,18 +355,26 @@ class ParkPassportFinder {
             <div class="detail-header">
                 <button class="back-btn" onclick="history.back()">← Back</button>
                 <h1>${parkName}</h1>
+                <p class="park-subtitle">Featured in ${parkAppearances.length} stamp set${parkAppearances.length > 1 ? 's' : ''}</p>
             </div>
             <div class="park-detail-content">
-                <div class="park-overview">
-                    <p class="appearance-count">Featured in ${parkAppearances.length} stamp set${parkAppearances.length > 1 ? 's' : ''}</p>
-                    <h2>Appearances by Year</h2>
-                    <div class="park-appearances-grid">
-                        ${appearanceCards}
+                <div class="park-stickers-container">
+                    <div class="stamp-sets-section">
+                        <div class="section-header">
+                            <h3>Stamp Set Appearances</h3>
+                            <p class="section-description">View all the passport stamp sets that feature ${parkName}.</p>
+                        </div>
+                        <div class="park-appearances-grid">
+                            ${appearanceCards}
+                        </div>
                     </div>
+                    ${stickerSection}
                 </div>
             </div>
         `;
     }
+
+
 
     showRegionDetail(regionName) {
         const regionParks = [];
@@ -577,6 +743,21 @@ class ParkPassportFinder {
             </div>
         `).join('');
 
+        // Check for individual sticker availability
+        const stickerData = getStickerData(parkName);
+        let stickerInfo = '';
+        if (stickerData?.hasIndividualSticker) {
+            const stickerTypes = [];
+            if (stickerData.stickerType === 'both') {
+                stickerTypes.push('Regular', 'Jr. Ranger');
+            } else if (stickerData.stickerType === 'junior-ranger') {
+                stickerTypes.push('Jr. Ranger');
+            } else {
+                stickerTypes.push('Individual');
+            }
+            stickerInfo = `<div class="park-stickers">Individual: ${stickerTypes.join(', ')}</div>`;
+        }
+
         card.innerHTML = `
             <div class="stamp-image-container">
                 <img src="${stampImage}" 
@@ -587,6 +768,7 @@ class ParkPassportFinder {
             <div class="stamp-content">
                 <h3 class="stamp-park">${parkName}</h3>
                 ${yearsHtml}
+                ${stickerInfo}
                 <div class="stamp-links" onclick="event.stopPropagation()">
                     ${stamps.map(stamp => `
                         <a href="${window.generatePurchaseLink(stamp.year)}" 
@@ -691,6 +873,12 @@ class ParkPassportFinder {
             case 'region':
                 this.renderRegionView(container);
                 break;
+            case 'individual-stickers':
+                this.renderIndividualStickersView(container);
+                break;
+            case 'junior-ranger':
+                this.renderJuniorRangerView(container);
+                break;
         }
     }
 
@@ -759,13 +947,26 @@ class ParkPassportFinder {
         this.data.forEach(yearData => {
             yearData.stamps.forEach(stamp => {
                 if (!allParks[stamp.park]) {
-                    allParks[stamp.park] = [];
+                    allParks[stamp.park] = {
+                        stampAppearances: [],
+                        hasIndividualSticker: false,
+                        stickerType: null
+                    };
                 }
-                allParks[stamp.park].push({
+                allParks[stamp.park].stampAppearances.push({
                     year: yearData.year,
                     region: stamp.region
                 });
             });
+        });
+
+        // Add individual sticker info
+        Object.keys(allParks).forEach(parkName => {
+            const stickerData = getStickerData(parkName);
+            if (stickerData?.hasIndividualSticker) {
+                allParks[parkName].hasIndividualSticker = true;
+                allParks[parkName].stickerType = stickerData.stickerType;
+            }
         });
 
         const sortedParks = Object.entries(allParks).sort((a, b) => 
@@ -775,21 +976,33 @@ class ParkPassportFinder {
         const grid = document.createElement('div');
         grid.className = 'alphabetical-grid';
 
-        sortedParks.forEach(([park, appearances]) => {
+        sortedParks.forEach(([park, data]) => {
             const item = document.createElement('div');
             item.className = 'park-item';
             
-            const years = appearances.map(a => a.year).sort((a, b) => b - a).join(', ');
+            const years = data.stampAppearances.map(a => a.year).sort((a, b) => b - a).join(', ');
+            
+            let stickerInfo = '';
+            if (data.hasIndividualSticker) {
+                const stickerTypes = [];
+                if (data.stickerType === 'both') {
+                    stickerTypes.push('Regular', 'Jr. Ranger');
+                } else if (data.stickerType === 'junior-ranger') {
+                    stickerTypes.push('Jr. Ranger');
+                } else {
+                    stickerTypes.push('Individual');
+                }
+                stickerInfo = `<div class="park-stickers">Individual: ${stickerTypes.join(', ')}</div>`;
+            }
             
             item.innerHTML = `
                 <div class="park-name">${park}</div>
-                <div class="park-years">Years: ${years}</div>
+                <div class="park-years">Stamp Sets: ${years}</div>
+                ${stickerInfo}
             `;
 
             item.addEventListener('click', () => {
-                document.getElementById('searchInput').value = park;
-                this.handleSearch(park);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                this.navigateTo(`park/${encodeURIComponent(park)}`);
             });
 
             grid.appendChild(item);
@@ -829,24 +1042,177 @@ class ParkPassportFinder {
                 regionSection.innerHTML = `
                     <h3 class="region-title" data-route="region/${encodeURIComponent(region)}">${region}</h3>
                     <div class="region-parks-grid">
-                        ${parks.map(p => `
-                            <div class="region-park-item" data-route="park/${encodeURIComponent(p.park)}">
-                                <img src="${window.getStampImage(p.park, p.year, p.region)}" 
-                                     alt="${p.park}" 
-                                     class="region-park-image"
-                                     loading="lazy">
-                                <div class="region-park-info">
-                                    <div class="region-park-name">${p.park}</div>
-                                    <div class="region-park-year">${p.year}</div>
+                        ${parks.map(p => {
+                            // Check for individual sticker availability
+                            const stickerData = getStickerData(p.park);
+                            let stickerInfo = '';
+                            if (stickerData?.hasIndividualSticker) {
+                                const stickerTypes = [];
+                                if (stickerData.stickerType === 'both') {
+                                    stickerTypes.push('Regular', 'Jr. Ranger');
+                                } else if (stickerData.stickerType === 'junior-ranger') {
+                                    stickerTypes.push('Jr. Ranger');
+                                } else {
+                                    stickerTypes.push('Individual');
+                                }
+                                stickerInfo = `<div class="region-park-stickers">Individual: ${stickerTypes.join(', ')}</div>`;
+                            }
+                            
+                            return `
+                                <div class="region-park-item" data-route="park/${encodeURIComponent(p.park)}">
+                                    <img src="${window.getStampImage(p.park, p.year, p.region)}" 
+                                         alt="${p.park}" 
+                                         class="region-park-image"
+                                         loading="lazy">
+                                    <div class="region-park-info">
+                                        <div class="region-park-name">${p.park}</div>
+                                        <div class="region-park-year">${p.year}</div>
+                                        ${stickerInfo}
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 `;
                 container.appendChild(regionSection);
             }
         });
     }
+
+    renderIndividualStickersView(container) {
+        if (!window.parkStickerMapping) {
+            container.innerHTML = '<p>Individual stickers data not available.</p>';
+            return;
+        }
+
+        const individualStickers = [];
+        Object.entries(window.parkStickerMapping).forEach(([parkName, stickerData]) => {
+            if (stickerData.hasIndividualSticker) {
+                if (stickerData.stickerType === 'both') {
+                    // Only add the regular sticker, not the junior ranger
+                    individualStickers.push({
+                        park: parkName,
+                        type: 'regular',
+                        filename: stickerData.imageFilename,
+                        purchaseUrl: stickerData.purchaseUrl,
+                        description: stickerData.description
+                    });
+                } else if (stickerData.stickerType === 'regular') {
+                    // Only add regular stickers, skip junior-ranger only parks
+                    individualStickers.push({
+                        park: parkName,
+                        type: stickerData.stickerType,
+                        filename: stickerData.imageFilename,
+                        purchaseUrl: stickerData.purchaseUrl,
+                        description: stickerData.description
+                    });
+                }
+                // Skip junior-ranger only stickers - they go in the Junior Ranger tab
+            }
+        });
+
+        // Sort by park name
+        individualStickers.sort((a, b) => a.park.localeCompare(b.park));
+
+        const grid = document.createElement('div');
+        grid.className = 'individual-stickers-browse-grid';
+
+        individualStickers.forEach(sticker => {
+            const item = document.createElement('div');
+            item.className = 'individual-sticker-browse-item';
+            
+            item.innerHTML = `
+                <div class="sticker-browse-image">
+                    <img src="images/individual-stickers/${sticker.filename}" 
+                         alt="${sticker.park} ${sticker.type === 'junior-ranger' ? 'Junior Ranger' : 'Regular'} Sticker" 
+                         loading="lazy"
+                         onerror="this.style.display='none'; this.parentElement.querySelector('.sticker-placeholder').style.display='flex';">
+                    <div class="sticker-placeholder" style="display: none;">
+                        <div class="placeholder-icon">${sticker.type === 'junior-ranger' ? '🎨' : '🎫'}</div>
+                        <p>${sticker.type === 'junior-ranger' ? 'Jr. Ranger' : 'Regular'}</p>
+                    </div>
+                </div>
+                <div class="sticker-browse-info">
+                    <h4>${sticker.park}</h4>
+                    <p class="sticker-browse-type">${sticker.type === 'junior-ranger' ? 'Junior Ranger' : 'Regular'}</p>
+                    <a href="${sticker.purchaseUrl}" target="_blank" rel="noopener" class="stamp-link">Buy Sticker</a>
+                </div>
+            `;
+
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('a')) {
+                    this.navigateTo(`park/${encodeURIComponent(sticker.park)}`);
+                }
+            });
+
+            grid.appendChild(item);
+        });
+
+        container.appendChild(grid);
+    }
+
+    renderJuniorRangerView(container) {
+        if (!window.parkStickerMapping) {
+            container.innerHTML = '<p>Individual stickers data not available.</p>';
+            return;
+        }
+
+        const juniorRangerStickers = [];
+        Object.entries(window.parkStickerMapping).forEach(([parkName, stickerData]) => {
+            if (stickerData.hasIndividualSticker && (stickerData.stickerType === 'junior-ranger' || stickerData.stickerType === 'both')) {
+                const filename = stickerData.stickerType === 'both' ? stickerData.imageFilenameJuniorRanger : stickerData.imageFilename;
+                const purchaseUrl = stickerData.stickerType === 'both' ? stickerData.purchaseUrlJuniorRanger : stickerData.purchaseUrl;
+                const description = stickerData.stickerType === 'both' ? stickerData.descriptionJuniorRanger : stickerData.description;
+                
+                juniorRangerStickers.push({
+                    park: parkName,
+                    filename: filename,
+                    purchaseUrl: purchaseUrl,
+                    description: description
+                });
+            }
+        });
+
+        // Sort by park name
+        juniorRangerStickers.sort((a, b) => a.park.localeCompare(b.park));
+
+        const grid = document.createElement('div');
+        grid.className = 'individual-stickers-browse-grid';
+
+        juniorRangerStickers.forEach(sticker => {
+            const item = document.createElement('div');
+            item.className = 'individual-sticker-browse-item';
+            
+            item.innerHTML = `
+                <div class="sticker-browse-image">
+                    <img src="images/individual-stickers/${sticker.filename}" 
+                         alt="${sticker.park} Junior Ranger Sticker" 
+                         loading="lazy"
+                         onerror="this.style.display='none'; this.parentElement.querySelector('.sticker-placeholder').style.display='flex';">
+                    <div class="sticker-placeholder" style="display: none;">
+                        <div class="placeholder-icon">🎨</div>
+                        <p>Jr. Ranger</p>
+                    </div>
+                </div>
+                <div class="sticker-browse-info">
+                    <h4>${sticker.park}</h4>
+                    <p class="sticker-browse-type">Junior Ranger</p>
+                    <a href="${sticker.purchaseUrl}" target="_blank" rel="noopener" class="stamp-link">Buy Jr. Ranger</a>
+                </div>
+            `;
+
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('a')) {
+                    this.navigateTo(`park/${encodeURIComponent(sticker.park)}`);
+                }
+            });
+
+            grid.appendChild(item);
+        });
+
+        container.appendChild(grid);
+    }
+
 }
 
 // Initialize the application when DOM is loaded
