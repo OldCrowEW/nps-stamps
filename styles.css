@@ -838,20 +838,266 @@ footer a:hover {
     box-shadow: var(--shadow);
 }
 
-.park-overview {
+/* Park Stickers Container - Side by Side Layout */
+.park-stickers-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
     padding: 2rem;
 }
 
-.appearance-count {
-    font-size: 1.2rem;
-    color: var(--text-gray);
-    margin-bottom: 1.5rem;
+@media (max-width: 1200px) {
+    .park-stickers-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .park-appearances-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
 }
+
+@media (max-width: 900px) {
+    .park-stickers-container {
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    
+    .park-appearances-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+}
+
+/* Unified Park Page */
+.park-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: normal;
+}
+
+.section-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--bg-light);
+}
+
+.section-header h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-green);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.section-description {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Individual Stickers Section */
+.individual-stickers-section {
+    background: var(--bg-light);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+/* Stamp Sets Section */
+.stamp-sets-section {
+    /* No individual background/shadow since it's in the container */
+}
+
+
+
+.stickers-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.stickers-grid.single-sticker {
+    grid-template-columns: 1fr;
+}
+
+.sticker-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sticker-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sticker-image-container {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.sticker-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius);
+}
+
+.sticker-placeholder {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #6c757d;
+    width: 100%;
+    height: 100%;
+}
+
+.placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.sticker-info h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-dark);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.sticker-description {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+.sticker-details {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.sticker-type {
+    background: var(--bg-light);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.stock-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.stock-badge.low-stock {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stock-badge.sold-out {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.purchase-sticker-btn {
+    background: var(--accent-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    transition: var(--transition);
+    text-align: center;
+    width: 100%;
+}
+
+.purchase-sticker-btn:hover {
+    background: var(--accent-color-dark);
+}
+
+
+
+/* Responsive adjustments for unified park pages */
+@media (max-width: 768px) {
+    .park-stickers-container {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .park-appearances-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .sticker-card {
+        padding: 1rem;
+    }
+    
+    .sticker-image-container {
+        height: 150px;
+    }
+    
+    .individual-stickers-section {
+        padding: 1rem;
+    }
+    
+    .section-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .park-subtitle {
+        font-size: 1rem;
+    }
+    
+    .appearance-card {
+        margin-bottom: 0;
+    }
+    
+    .appearance-header {
+        padding: 0.75rem;
+    }
+    
+    .clickable-year {
+        font-size: 1.1rem;
+    }
+    
+    .stamp-region-badge {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+
 
 .park-appearances-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
     margin-top: 1.5rem;
 }
 
@@ -1263,4 +1509,121 @@ footer a:hover {
         max-width: 95vw;
         max-height: 70vh;
     }
+}
+
+/* Individual Stickers Browse Grid */
+.individual-stickers-browse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.individual-sticker-browse-item {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.individual-sticker-browse-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.sticker-browse-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sticker-browse-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sticker-browse-info {
+    padding: 1rem;
+}
+
+.sticker-browse-info h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: var(--text-dark);
+    line-height: 1.3;
+}
+
+.sticker-browse-type {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+.park-stickers {
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .individual-stickers-browse-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .sticker-browse-image {
+        height: 150px;
+    }
+    
+    .sticker-browse-info {
+        padding: 0.75rem;
+    }
+    
+    .browse-tabs {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .tab-btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Individual Sticker Availability Indicators */
+.park-stickers, .region-park-stickers {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+    display: inline-block;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.park-stickers {
+    margin-top: 0.75rem;
+}
+
+.region-park-stickers {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Search card specific styling */
+.stamp-content .park-stickers {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
 } 
