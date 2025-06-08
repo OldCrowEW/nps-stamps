@@ -1135,13 +1135,27 @@ class ParkPassportFinder {
                 <div class="sticker-browse-info">
                     <h4>${sticker.park}</h4>
                     <p class="sticker-browse-type">${sticker.type === 'junior-ranger' ? 'Junior Ranger' : 'Regular'}</p>
-                    <a href="${sticker.purchaseUrl}" target="_blank" rel="noopener" class="stamp-link">Buy Sticker</a>
+                    <a href="${sticker.purchaseUrl}" target="_blank" rel="noopener" class="stamp-link" onclick="event.stopPropagation()">Buy Sticker</a>
                 </div>
             `;
 
             item.addEventListener('click', (e) => {
                 if (!e.target.closest('a')) {
-                    this.navigateTo(`park/${encodeURIComponent(sticker.park)}`);
+                    // Try to find the park in stamp data - handle name mismatches
+                    let parkFound = false;
+                    this.data.forEach(yearData => {
+                        yearData.stamps.forEach(stamp => {
+                            if (stamp.park === sticker.park || normalizeParkName(stamp.park) === sticker.park) {
+                                this.navigateTo(`park/${encodeURIComponent(stamp.park)}`);
+                                parkFound = true;
+                            }
+                        });
+                    });
+                    
+                    // If not found in stamp data, navigate with the sticker park name
+                    if (!parkFound) {
+                        this.navigateTo(`park/${encodeURIComponent(sticker.park)}`);
+                    }
                 }
             });
 
@@ -1197,13 +1211,27 @@ class ParkPassportFinder {
                 <div class="sticker-browse-info">
                     <h4>${sticker.park}</h4>
                     <p class="sticker-browse-type">Junior Ranger</p>
-                    <a href="${sticker.purchaseUrl}" target="_blank" rel="noopener" class="stamp-link">Buy Jr. Ranger</a>
+                    <a href="${sticker.purchaseUrl}" target="_blank" rel="noopener" class="stamp-link" onclick="event.stopPropagation()">Buy Jr. Ranger</a>
                 </div>
             `;
 
             item.addEventListener('click', (e) => {
                 if (!e.target.closest('a')) {
-                    this.navigateTo(`park/${encodeURIComponent(sticker.park)}`);
+                    // Try to find the park in stamp data - handle name mismatches
+                    let parkFound = false;
+                    this.data.forEach(yearData => {
+                        yearData.stamps.forEach(stamp => {
+                            if (stamp.park === sticker.park || normalizeParkName(stamp.park) === sticker.park) {
+                                this.navigateTo(`park/${encodeURIComponent(stamp.park)}`);
+                                parkFound = true;
+                            }
+                        });
+                    });
+                    
+                    // If not found in stamp data, navigate with the sticker park name
+                    if (!parkFound) {
+                        this.navigateTo(`park/${encodeURIComponent(sticker.park)}`);
+                    }
                 }
             });
 

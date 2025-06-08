@@ -1626,4 +1626,24 @@ footer a:hover {
 .stamp-content .park-stickers {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+/* Make individual sticker browse items clearly clickable */
+.individual-sticker-browse-item {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.individual-sticker-browse-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.individual-sticker-browse-item .sticker-browse-info h4 {
+    color: var(--primary-green);
+    transition: color 0.2s ease;
+}
+
+.individual-sticker-browse-item:hover .sticker-browse-info h4 {
+    color: var(--accent-green);
 } 
