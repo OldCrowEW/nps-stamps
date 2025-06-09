@@ -152,7 +152,7 @@ const stampData = [
             { park: "Acadia National Park", region: "North Atlantic" },
             { park: "Wolf Trap National Park for the Performing Arts", region: "Mid-Atlantic" },
             { park: "John Paul Jones Memorial", region: "National Capital" },
-            { park: "Abraham Lincoln National Historical Park", region: "Southeast" },
+            { park: "Abraham Lincoln Birthplace National Historical Park", region: "Southeast" },
             { park: "George Rogers Clark National Historical Park", region: "Midwest" },
             { park: "Capulin Volcano National Monument", region: "Southwest" },
             { park: "Fort Union Trading Post National Historic Site", region: "Rocky Mountain" },
@@ -260,7 +260,7 @@ const stampData = [
     {
         year: 2009,
         stamps: [
-            { park: "Abraham Lincoln Birthplace National Historic Site", region: "National" },
+            { park: "Abraham Lincoln Birthplace National Historical Park", region: "National" },
             { park: "Gateway National Recreation Area", region: "North Atlantic" },
             { park: "Richmond National Battlefield Park", region: "Mid-Atlantic" },
             { park: "District of Columbia War Memorial", region: "National Capital" },

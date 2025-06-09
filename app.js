@@ -2,6 +2,20 @@ console.log('[DEBUG] app.js loaded');
 
 // Helper function to normalize park names for sticker mapping lookup
 function normalizeParkName(parkName) {
+    // Handle specific special cases first
+    if (parkName === 'Ellis Island National Monument') {
+        return 'Ellis Island';
+    }
+    if (parkName === 'Gateway National Recreation Area') {
+        return 'Gateway NRA Sandy Hook Unit';
+    }
+    if (parkName.startsWith('Independence National Historical Park')) {
+        return 'Independence NHP';
+    }
+    if (parkName === 'Ozark National Scenic Riverways') {
+        return 'Ozark NSR';
+    }
+    
     return parkName
         .replace(/National Historical Park/g, 'NHP')
         .replace(/National Historic Site/g, 'NHS') 
@@ -35,6 +49,14 @@ function getStickerData(parkName) {
     const normalizedName = normalizeParkName(parkName);
     if (window.parkStickerMapping?.[normalizedName]) {
         return window.parkStickerMapping[normalizedName];
+    }
+    
+    // Try reverse lookup - check if any sticker mapping key matches our normalized name
+    const ourNormalizedName = normalizeParkName(parkName);
+    for (const [stickerKey, stickerData] of Object.entries(window.parkStickerMapping || {})) {
+        if (stickerKey === ourNormalizedName) {
+            return stickerData;
+        }
     }
     
     return null;
@@ -185,7 +207,32 @@ class ParkPassportFinder {
         const parkAppearances = [];
         this.data.forEach(yearData => {
             yearData.stamps.forEach(stamp => {
+                // Check for exact match
                 if (stamp.park === parkName) {
+                    parkAppearances.push({
+                        year: yearData.year,
+                        region: stamp.region,
+                        yearData: yearData
+                    });
+                }
+                // Check if normalized stamp name matches the park name
+                else if (normalizeParkName(stamp.park) === parkName) {
+                    parkAppearances.push({
+                        year: yearData.year,
+                        region: stamp.region,
+                        yearData: yearData
+                    });
+                }
+                // Check if stamp name matches normalized park name
+                else if (stamp.park === normalizeParkName(parkName)) {
+                    parkAppearances.push({
+                        year: yearData.year,
+                        region: stamp.region,
+                        yearData: yearData
+                    });
+                }
+                // Check if both normalized versions match
+                else if (normalizeParkName(stamp.park) === normalizeParkName(parkName)) {
                     parkAppearances.push({
                         year: yearData.year,
                         region: stamp.region,
@@ -1140,17 +1187,18 @@ class ParkPassportFinder {
             `;
 
             item.addEventListener('click', (e) => {
-                if (!e.target.closest('a')) {
+                if (!e.target.closest('a') && !e.target.closest('.sticker-browse-image img')) {
                     // Try to find the park in stamp data - handle name mismatches
                     let parkFound = false;
-                    this.data.forEach(yearData => {
-                        yearData.stamps.forEach(stamp => {
+                    outerLoop: for (const yearData of this.data) {
+                        for (const stamp of yearData.stamps) {
                             if (stamp.park === sticker.park || normalizeParkName(stamp.park) === sticker.park) {
                                 this.navigateTo(`park/${encodeURIComponent(stamp.park)}`);
                                 parkFound = true;
+                                break outerLoop;
                             }
-                        });
-                    });
+                        }
+                    }
                     
                     // If not found in stamp data, navigate with the sticker park name
                     if (!parkFound) {
@@ -1216,17 +1264,18 @@ class ParkPassportFinder {
             `;
 
             item.addEventListener('click', (e) => {
-                if (!e.target.closest('a')) {
+                if (!e.target.closest('a') && !e.target.closest('.sticker-browse-image img')) {
                     // Try to find the park in stamp data - handle name mismatches
                     let parkFound = false;
-                    this.data.forEach(yearData => {
-                        yearData.stamps.forEach(stamp => {
+                    outerLoop: for (const yearData of this.data) {
+                        for (const stamp of yearData.stamps) {
                             if (stamp.park === sticker.park || normalizeParkName(stamp.park) === sticker.park) {
                                 this.navigateTo(`park/${encodeURIComponent(stamp.park)}`);
                                 parkFound = true;
+                                break outerLoop;
                             }
-                        });
-                    });
+                        }
+                    }
                     
                     // If not found in stamp data, navigate with the sticker park name
                     if (!parkFound) {
