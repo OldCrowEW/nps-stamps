@@ -1092,7 +1092,7 @@ window.parkStickerMapping = {
     description: "Official passport sticker for Niobrara National Scenic River"
   },
 
-  "Noatak NP": {
+  "Noatak N PRES": {
     hasIndividualSticker: true,
     stickerType: "regular",
     imageFilename: "noatak-np.jpg",
@@ -1207,7 +1207,7 @@ window.parkStickerMapping = {
     description: "Official passport sticker for Richmond National Battlefield Park"
   },
 
-  "Rio Grande W&SR": {
+  "Rio Grande WSR": {
     hasIndividualSticker: true,
     stickerType: "regular",
     imageFilename: "rio-grande-wsr.jpg",
@@ -1447,7 +1447,7 @@ window.parkStickerMapping = {
     description: "Official passport sticker for Tuskegee Airmen National Historic Site"
   },
 
-  "Valles Caldera NP": {
+  "Valles Caldera N PRES": {
     hasIndividualSticker: true,
     stickerType: "regular",
     imageFilename: "valles-caldera-np.jpg",
