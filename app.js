@@ -865,6 +865,18 @@ class ParkPassportFinder {
                      alt="${parkName}" 
                      class="stamp-image" 
                      loading="lazy">
+                <div class="stamp-card-overlay">
+                    <div class="overlay-title">${parkName}</div>
+                    <div class="overlay-subtitle">${stamps.length > 1 ? `${stamps.length} stamp sets` : `${stamps[0].year} stamp set`}</div>
+                    <div class="overlay-actions">
+                        <button class="overlay-btn" onclick="event.stopPropagation(); window.location.hash='park/${encodeURIComponent(parkName)}'">
+                            View Details
+                        </button>
+                        <button class="overlay-btn secondary" onclick="event.stopPropagation(); window.open('${window.generatePurchaseLink(stamps[0].year)}', '_blank')">
+                            Buy Set
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="stamp-content">
                 <h3 class="stamp-park">${parkName}</h3>

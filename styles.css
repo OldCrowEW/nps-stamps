@@ -427,18 +427,21 @@ select:hover {
 }
 
 .stamp-card {
-    background: white;
+    background: var(--bg-white);
     border-radius: var(--radius);
     padding: 0;
     box-shadow: var(--shadow);
-    transition: var(--transition);
+    transition: var(--transition-transform), var(--transition-shadow);
     overflow: hidden;
     cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
 }
 
 .stamp-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-8px) scale(1.02) rotateX(2deg) rotateY(1deg);
+    box-shadow: var(--shadow-xl);
+    z-index: var(--z-dropdown);
 }
 
 .stamp-image-container {
@@ -446,17 +449,90 @@ select:hover {
     height: 200px;
     overflow: hidden;
     background-color: var(--bg-light);
+    position: relative;
 }
 
 .stamp-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: var(--transition);
+    transition: var(--transition-transform);
 }
 
 .stamp-card:hover .stamp-image {
+    transform: scale(1.08);
+}
+
+/* Card Info Overlay */
+.stamp-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.8) 100%
+    );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: var(--space-lg);
+    opacity: 0;
+    transition: var(--transition-opacity);
+    pointer-events: none;
+}
+
+.stamp-card:hover .stamp-card-overlay {
+    opacity: 1;
+}
+
+.overlay-title {
+    color: white;
+    font-weight: 600;
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-xs);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.overlay-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.overlay-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.overlay-btn {
+    padding: var(--space-xs) var(--space-md);
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    pointer-events: auto;
+}
+
+.overlay-btn:hover {
+    background: var(--accent-color-dark);
     transform: scale(1.05);
+}
+
+.overlay-btn.secondary {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.overlay-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .stamp-content {
@@ -1968,4 +2044,62 @@ footer a:hover {
 /* Prevent transition on initial load */
 .preload * {
     transition: none !important;
+}
+
+/* Parallax Tilt Effect for Cards */
+.stamp-card {
+    will-change: transform;
+}
+
+/* Enhanced Timeline Cards */
+.timeline-item:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Enhanced Region Cards */
+.region-park-item:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+.individual-sticker-browse-item:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Card Peek Effect for Grid Items */
+.results-grid:hover .stamp-card:not(:hover) {
+    transform: scale(0.98);
+    opacity: 0.8;
+}
+
+.timeline:hover .timeline-item:not(:hover) {
+    transform: scale(0.99);
+    opacity: 0.9;
+}
+
+.individual-stickers-browse-grid:hover .individual-sticker-browse-item:not(:hover) {
+    transform: scale(0.98);
+    opacity: 0.8;
+}
+
+/* Appearance Cards Enhancement */
+.appearance-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+.appearance-card:hover .appearance-image img {
+    transform: scale(1.08);
+}
+
+/* Sticker Cards Enhancement */
+.sticker-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+.sticker-card:hover .sticker-image {
+    transform: scale(1.08);
 }
