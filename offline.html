@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Park Passport Finder</title>
+    <style>
+        :root {
+            --accent-color: #6FA343;
+            --text-dark: #2c3e50;
+            --bg-light: #f8f9fa;
+        }
+        
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #5a8f3a 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .offline-container {
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 3rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+        
+        h1 {
+            margin: 0 0 1rem 0;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        p {
+            margin: 0 0 2rem 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .retry-button {
+            background: white;
+            color: var(--accent-color);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .features-list li {
+            margin: 0.5rem 0;
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+        
+        .features-list li::before {
+            content: '✓ ';
+            color: #90EE90;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .offline-container {
+                margin: 1rem;
+                padding: 2rem 1.5rem;
+            }
+            
+            .offline-icon {
+                font-size: 3rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>You're Offline</h1>
+        <p>It looks like you've lost your internet connection. Don't worry - you can still browse some content that we've saved for you!</p>
+        
+        <ul class="features-list">
+            <li>View recently browsed stamp collections</li>
+            <li>Access your search history</li>
+            <li>Browse cached park information</li>
+        </ul>
+        
+        <a href="/" class="retry-button" onclick="window.location.reload(); return false;">
+            Try Again
+        </a>
+    </div>
+
+    <script>
+        // Check if we're back online
+        window.addEventListener('online', () => {
+            window.location.href = '/';
+        });
+        
+        // Auto-retry every 30 seconds
+        setInterval(() => {
+            if (navigator.onLine) {
+                window.location.href = '/';
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -2860,6 +2860,242 @@ class PerformanceOptimizer {
 const performanceOptimizer = new PerformanceOptimizer();
 window.performanceOptimizer = performanceOptimizer;
 
+// PWA Management System
+class PWAManager {
+    constructor() {
+        this.deferredPrompt = null;
+        this.isInstalled = false;
+        this.isOffline = !navigator.onLine;
+        
+        this.init();
+    }
+
+    init() {
+        this.registerServiceWorker();
+        this.setupInstallPrompt();
+        this.setupNetworkDetection();
+        this.setupNotifications();
+        this.checkInstallStatus();
+    }
+
+    async registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('PWA: Service worker registered', registration);
+                
+                // Handle service worker updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            this.showUpdateAvailable();
+                        }
+                    });
+                });
+
+                // Setup background sync
+                if ('sync' in window.ServiceWorkerRegistration.prototype) {
+                    this.setupBackgroundSync(registration);
+                }
+
+            } catch (error) {
+                console.log('PWA: Service worker registration failed', error);
+            }
+        }
+    }
+
+    setupInstallPrompt() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallButton();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA: App was installed');
+            this.isInstalled = true;
+            this.hideInstallButton();
+            this.deferredPrompt = null;
+        });
+    }
+
+    showInstallButton() {
+        const installButton = document.createElement('button');
+        installButton.id = 'installButton';
+        installButton.className = 'install-button';
+        installButton.innerHTML = `
+            <span class="install-icon">⬇</span>
+            Install App
+        `;
+        
+        installButton.addEventListener('click', () => {
+            this.promptInstall();
+        });
+
+        // Add to header
+        const header = document.querySelector('header .container nav');
+        if (header && !document.getElementById('installButton')) {
+            header.appendChild(installButton);
+        }
+    }
+
+    hideInstallButton() {
+        const installButton = document.getElementById('installButton');
+        if (installButton) {
+            installButton.remove();
+        }
+    }
+
+    async promptInstall() {
+        if (!this.deferredPrompt) return;
+
+        this.deferredPrompt.prompt();
+        const { outcome } = await this.deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('PWA: User accepted install prompt');
+        } else {
+            console.log('PWA: User dismissed install prompt');
+        }
+        
+        this.deferredPrompt = null;
+        this.hideInstallButton();
+    }
+
+    setupNetworkDetection() {
+        window.addEventListener('online', () => {
+            this.isOffline = false;
+            this.hideOfflineIndicator();
+        });
+
+        window.addEventListener('offline', () => {
+            this.isOffline = true;
+            this.showOfflineIndicator();
+        });
+    }
+
+    showOfflineIndicator() {
+        let indicator = document.getElementById('offlineIndicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'offlineIndicator';
+            indicator.className = 'offline-indicator';
+            indicator.innerHTML = '📡 You\'re offline - some features may be limited';
+            document.body.appendChild(indicator);
+        }
+        indicator.style.display = 'block';
+    }
+
+    hideOfflineIndicator() {
+        const indicator = document.getElementById('offlineIndicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+
+    async setupNotifications() {
+        if ('Notification' in window && 'serviceWorker' in navigator) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('PWA: Notification permission granted');
+            }
+        }
+    }
+
+    async setupBackgroundSync(registration) {
+        try {
+            await registration.sync.register('background-sync');
+            console.log('PWA: Background sync registered');
+        } catch (error) {
+            console.log('PWA: Background sync registration failed', error);
+        }
+    }
+
+    showUpdateAvailable() {
+        const updateBanner = document.createElement('div');
+        updateBanner.className = 'update-banner';
+        updateBanner.innerHTML = `
+            <div class="update-content">
+                <span>🎉 A new version is available!</span>
+                <button id="updateButton" class="update-button">Update Now</button>
+                <button id="dismissUpdate" class="dismiss-button">×</button>
+            </div>
+        `;
+
+        document.getElementById('updateButton').addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        document.getElementById('dismissUpdate').addEventListener('click', () => {
+            updateBanner.remove();
+        });
+
+        document.body.appendChild(updateBanner);
+    }
+
+    checkInstallStatus() {
+        // Check if running as PWA
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            this.isInstalled = true;
+            document.body.classList.add('pwa-mode');
+        }
+    }
+
+    async shareContent(title, text, url) {
+        if (navigator.share) {
+            try {
+                await navigator.share({ title, text, url });
+                console.log('PWA: Content shared successfully');
+            } catch (error) {
+                console.log('PWA: Share failed', error);
+                this.fallbackShare(title, text, url);
+            }
+        } else {
+            this.fallbackShare(title, text, url);
+        }
+    }
+
+    fallbackShare(title, text, url) {
+        navigator.clipboard.writeText(url).then(() => {
+            this.showToast('Link copied to clipboard!');
+        });
+    }
+
+    showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    getConnectionInfo() {
+        return {
+            isOnline: !this.isOffline,
+            isInstalled: this.isInstalled,
+            connection: navigator.connection ? {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink,
+                saveData: navigator.connection.saveData
+            } : null
+        };
+    }
+}
+
+// Initialize PWA Manager
+const pwaManager = new PWAManager();
+window.pwaManager = pwaManager;
+
 // Hook into DOM updates to observe new images
 const originalInnerHTML = Element.prototype.innerHTML;
 Object.defineProperty(Element.prototype, 'innerHTML', {
