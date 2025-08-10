@@ -1039,12 +1039,18 @@ class ParkPassportFinder {
         const hash = window.location.hash.slice(1);
         const [type, ...params] = hash.split('/');
         
+        // Show/hide hero carousel based on route
+        const heroSection = document.getElementById('heroSection');
+        if (heroSection) {
+            heroSection.style.display = !type ? 'block' : 'none';
+        }
+        
         // Hide all sections first
         const sections = ['searchSection', 'browseSection', 'resultsSection', 'detailSection'];
         sections.forEach(id => document.getElementById(id).style.display = 'none');
         
         if (!type) {
-            // Default view - show main sections
+            // Default view - show main sections and hero carousel
             sections.slice(0, 3).forEach(id => document.getElementById(id).style.display = 'block');
             this.showBrowseView('timeline');
             return;
