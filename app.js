@@ -274,6 +274,498 @@ class HeroCarousel {
 // Initialize hero carousel
 const heroCarousel = new HeroCarousel();
 
+// Enhanced Search System
+class EnhancedSearch {
+    constructor(passportFinder) {
+        this.passportFinder = passportFinder;
+        this.searchHistory = this.loadSearchHistory();
+        this.debounceTimer = null;
+        this.currentQuery = '';
+        this.activeFilters = new Set();
+        this.suggestions = [];
+        
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.buildSearchIndex();
+    }
+
+    buildSearchIndex() {
+        // Build comprehensive search index
+        this.searchIndex = [];
+        
+        this.passportFinder.data.forEach(yearData => {
+            yearData.stamps.forEach(stamp => {
+                this.searchIndex.push({
+                    type: 'park',
+                    title: stamp.park,
+                    year: yearData.year,
+                    region: stamp.region,
+                    searchTerms: [
+                        stamp.park.toLowerCase(),
+                        stamp.region.toLowerCase(),
+                        yearData.year.toString()
+                    ]
+                });
+            });
+        });
+
+        // Add regions as searchable items
+        const regions = [...new Set(this.passportFinder.data.flatMap(d => 
+            d.stamps.map(s => s.region)))];
+        
+        regions.forEach(region => {
+            const parks = this.passportFinder.data.flatMap(d => 
+                d.stamps.filter(s => s.region === region).map(s => s.park));
+            
+            this.searchIndex.push({
+                type: 'region',
+                title: region,
+                count: parks.length,
+                searchTerms: [region.toLowerCase()]
+            });
+        });
+
+        // Add years as searchable items
+        this.passportFinder.data.forEach(yearData => {
+            this.searchIndex.push({
+                type: 'year',
+                title: `${yearData.year} Collection`,
+                year: yearData.year,
+                count: yearData.stamps.length,
+                searchTerms: [yearData.year.toString(), `${yearData.year} stamps`]
+            });
+        });
+    }
+
+    setupEventListeners() {
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+        const clearHistory = document.getElementById('clearHistory');
+        const yearFilter = document.getElementById('yearFilter');
+        const regionFilter = document.getElementById('regionFilter');
+        const clearFilters = document.getElementById('clearFilters');
+
+        // Search input with debouncing
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            this.handleSearchInput(query);
+        });
+
+        // Search input focus/blur
+        searchInput.addEventListener('focus', () => this.showSearchUI());
+        searchInput.addEventListener('blur', (e) => {
+            // Delay hiding to allow clicks on suggestions
+            setTimeout(() => this.hideSearchUI(), 150);
+        });
+
+        // Clear search
+        searchClear.addEventListener('click', () => this.clearSearch());
+
+        // Clear search history
+        if (clearHistory) {
+            clearHistory.addEventListener('click', () => this.clearSearchHistory());
+        }
+
+        // Filter changes
+        yearFilter.addEventListener('change', (e) => {
+            this.handleFilterChange('year', e.target.value, e.target.options[e.target.selectedIndex].text);
+        });
+
+        regionFilter.addEventListener('change', (e) => {
+            this.handleFilterChange('region', e.target.value, e.target.options[e.target.selectedIndex].text);
+        });
+
+        // Clear all filters
+        clearFilters.addEventListener('click', () => this.clearAllFilters());
+
+        // Suggestion clicks
+        document.getElementById('searchSuggestions').addEventListener('click', (e) => {
+            const suggestionItem = e.target.closest('.suggestion-item');
+            if (suggestionItem) {
+                this.selectSuggestion(suggestionItem);
+            }
+        });
+
+        // Search history clicks
+        document.getElementById('searchHistoryList').addEventListener('click', (e) => {
+            const historyItem = e.target.closest('.search-history-item');
+            if (historyItem) {
+                this.selectHistoryItem(historyItem.dataset.query);
+            }
+        });
+
+        // Active filter chip removal
+        document.getElementById('activeFilters').addEventListener('click', (e) => {
+            const chipRemove = e.target.closest('.filter-chip-remove');
+            if (chipRemove) {
+                const chip = chipRemove.closest('.filter-chip');
+                this.removeFilterChip(chip.dataset.filterType, chip.dataset.filterValue);
+            }
+        });
+    }
+
+    handleSearchInput(query) {
+        this.currentQuery = query;
+        const searchClear = document.getElementById('searchClear');
+        
+        // Show/hide clear button
+        searchClear.style.display = query ? 'flex' : 'none';
+        
+        // Debounce search
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+            this.performSearch(query);
+        }, 300);
+        
+        // Show suggestions immediately for better UX
+        if (query.length > 0) {
+            this.showSuggestions(query);
+        } else {
+            this.showSearchHistory();
+        }
+    }
+
+    performSearch(query) {
+        if (!query.trim()) {
+            this.passportFinder.clearSearch();
+            this.hideSearchStats();
+            return;
+        }
+
+        // Add to search history
+        this.addToSearchHistory(query);
+
+        // Perform fuzzy search
+        const results = this.fuzzySearch(query);
+        
+        // Apply current filters
+        const filteredResults = this.applyFiltersToResults(results);
+        
+        // Update UI
+        this.passportFinder.displaySearchResults(filteredResults, query);
+        this.showSearchStats(filteredResults.length, query);
+        this.hideSearchUI();
+    }
+
+    fuzzySearch(query) {
+        const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+        const results = [];
+
+        this.searchIndex.forEach(item => {
+            let score = 0;
+            let isFuzzyMatch = false;
+
+            searchTerms.forEach(searchTerm => {
+                item.searchTerms.forEach(itemTerm => {
+                    if (itemTerm.includes(searchTerm)) {
+                        score += searchTerm.length / itemTerm.length;
+                    } else if (this.calculateLevenshteinDistance(searchTerm, itemTerm) <= 2) {
+                        score += 0.5;
+                        isFuzzyMatch = true;
+                    }
+                });
+            });
+
+            if (score > 0) {
+                results.push({
+                    ...item,
+                    score,
+                    isFuzzyMatch
+                });
+            }
+        });
+
+        return results.sort((a, b) => b.score - a.score);
+    }
+
+    calculateLevenshteinDistance(a, b) {
+        const matrix = Array(b.length + 1).fill().map(() => Array(a.length + 1).fill(0));
+        
+        for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+        
+        for (let j = 1; j <= b.length; j++) {
+            for (let i = 1; i <= a.length; i++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j - 1][i] + 1,
+                    matrix[j][i - 1] + 1,
+                    matrix[j - 1][i - 1] + cost
+                );
+            }
+        }
+        
+        return matrix[b.length][a.length];
+    }
+
+    showSuggestions(query) {
+        const suggestions = this.fuzzySearch(query).slice(0, 8);
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        
+        if (suggestions.length === 0) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+
+        const suggestionsHTML = suggestions.map(suggestion => `
+            <div class="suggestion-item ${suggestion.isFuzzyMatch ? 'fuzzy-match' : ''}" 
+                 data-type="${suggestion.type}" 
+                 data-title="${suggestion.title}"
+                 data-year="${suggestion.year || ''}"
+                 data-region="${suggestion.region || ''}">
+                <div class="suggestion-main">
+                    <div class="suggestion-title">${this.highlightMatch(suggestion.title, query)}</div>
+                    <div class="suggestion-meta">
+                        ${suggestion.type === 'park' ? `${suggestion.region} • ${suggestion.year}` : 
+                          suggestion.type === 'region' ? `${suggestion.count} parks` :
+                          suggestion.type === 'year' ? `${suggestion.count} stamps` : ''}
+                    </div>
+                </div>
+                <span class="suggestion-type">${suggestion.type}</span>
+            </div>
+        `).join('');
+
+        suggestionsContainer.innerHTML = suggestionsHTML;
+        suggestionsContainer.classList.add('active');
+        
+        // Hide search history when showing suggestions
+        document.getElementById('searchHistory').style.display = 'none';
+    }
+
+    highlightMatch(text, query) {
+        const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+        let highlightedText = text;
+        
+        searchTerms.forEach(term => {
+            const regex = new RegExp(`(${term})`, 'gi');
+            highlightedText = highlightedText.replace(regex, '<span class="search-highlight">$1</span>');
+        });
+        
+        return highlightedText;
+    }
+
+    showSearchHistory() {
+        const historyContainer = document.getElementById('searchHistory');
+        const historyList = document.getElementById('searchHistoryList');
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        
+        if (this.searchHistory.length === 0) {
+            historyContainer.style.display = 'none';
+            return;
+        }
+
+        const historyHTML = this.searchHistory.slice(0, 5).map(query => `
+            <div class="search-history-item" data-query="${query}">
+                ${query}
+            </div>
+        `).join('');
+
+        historyList.innerHTML = historyHTML;
+        historyContainer.style.display = 'block';
+        suggestionsContainer.classList.remove('active');
+    }
+
+    addToSearchHistory(query) {
+        const trimmedQuery = query.trim();
+        if (!trimmedQuery || this.searchHistory.includes(trimmedQuery)) return;
+
+        this.searchHistory.unshift(trimmedQuery);
+        this.searchHistory = this.searchHistory.slice(0, 10); // Keep only last 10
+        this.saveSearchHistory();
+    }
+
+    loadSearchHistory() {
+        try {
+            return JSON.parse(localStorage.getItem('nps-search-history')) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    saveSearchHistory() {
+        localStorage.setItem('nps-search-history', JSON.stringify(this.searchHistory));
+    }
+
+    clearSearchHistory() {
+        this.searchHistory = [];
+        this.saveSearchHistory();
+        document.getElementById('searchHistory').style.display = 'none';
+    }
+
+    showSearchUI() {
+        const query = document.getElementById('searchInput').value;
+        if (query) {
+            this.showSuggestions(query);
+        } else {
+            this.showSearchHistory();
+        }
+    }
+
+    hideSearchUI() {
+        document.getElementById('searchSuggestions').classList.remove('active');
+        document.getElementById('searchHistory').style.display = 'none';
+    }
+
+    clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchClear').style.display = 'none';
+        this.passportFinder.clearSearch();
+        this.hideSearchStats();
+        this.hideSearchUI();
+    }
+
+    handleFilterChange(filterType, value, label) {
+        if (value) {
+            this.addFilterChip(filterType, value, label);
+        }
+        
+        // Reset the select to show placeholder
+        event.target.selectedIndex = 0;
+        
+        this.applyAllFilters();
+    }
+
+    addFilterChip(type, value, label) {
+        // Remove existing filter of same type
+        this.activeFilters.forEach(filter => {
+            if (filter.type === type) {
+                this.activeFilters.delete(filter);
+            }
+        });
+        
+        // Add new filter
+        this.activeFilters.add({ type, value, label });
+        this.renderFilterChips();
+    }
+
+    removeFilterChip(type, value) {
+        this.activeFilters.forEach(filter => {
+            if (filter.type === type && filter.value === value) {
+                this.activeFilters.delete(filter);
+            }
+        });
+        this.renderFilterChips();
+        this.applyAllFilters();
+    }
+
+    renderFilterChips() {
+        const container = document.getElementById('activeFilters');
+        
+        if (this.activeFilters.size === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        const chipsHTML = Array.from(this.activeFilters).map(filter => `
+            <div class="filter-chip" data-filter-type="${filter.type}" data-filter-value="${filter.value}">
+                <span>${filter.label}</span>
+                <button class="filter-chip-remove" aria-label="Remove filter">×</button>
+            </div>
+        `).join('');
+
+        container.innerHTML = chipsHTML;
+        container.style.display = 'flex';
+    }
+
+    clearAllFilters() {
+        this.activeFilters.clear();
+        this.renderFilterChips();
+        
+        // Reset select elements
+        document.getElementById('yearFilter').selectedIndex = 0;
+        document.getElementById('regionFilter').selectedIndex = 0;
+        
+        this.applyAllFilters();
+    }
+
+    applyAllFilters() {
+        if (this.currentQuery) {
+            this.performSearch(this.currentQuery);
+        } else {
+            this.passportFinder.clearSearch();
+            this.hideSearchStats();
+        }
+    }
+
+    applyFiltersToResults(results) {
+        if (this.activeFilters.size === 0) return results;
+
+        return results.filter(result => {
+            return Array.from(this.activeFilters).every(filter => {
+                switch (filter.type) {
+                    case 'year':
+                        return result.year && result.year.toString() === filter.value;
+                    case 'region':
+                        return result.region === filter.value;
+                    default:
+                        return true;
+                }
+            });
+        });
+    }
+
+    selectSuggestion(suggestionElement) {
+        const type = suggestionElement.dataset.type;
+        const title = suggestionElement.dataset.title;
+        const year = suggestionElement.dataset.year;
+        const region = suggestionElement.dataset.region;
+
+        // Set search input
+        document.getElementById('searchInput').value = title;
+        
+        // Add to history
+        this.addToSearchHistory(title);
+        
+        // Navigate based on type
+        if (type === 'park') {
+            window.location.hash = `park/${encodeURIComponent(title)}`;
+        } else if (type === 'year') {
+            window.location.hash = `year/${year}`;
+        } else if (type === 'region') {
+            window.location.hash = `region/${encodeURIComponent(title)}`;
+        }
+        
+        this.hideSearchUI();
+    }
+
+    selectHistoryItem(query) {
+        document.getElementById('searchInput').value = query;
+        this.performSearch(query);
+    }
+
+    showSearchStats(count, query) {
+        const statsContainer = document.getElementById('searchStats');
+        const statsText = document.getElementById('searchStatsText');
+        
+        let message = `Found ${count} result${count !== 1 ? 's' : ''} for "${query}"`;
+        
+        if (this.activeFilters.size > 0) {
+            const filterLabels = Array.from(this.activeFilters).map(f => f.label);
+            message += ` with filters: ${filterLabels.join(', ')}`;
+        }
+        
+        statsText.textContent = message;
+        statsContainer.style.display = 'block';
+    }
+
+    hideSearchStats() {
+        document.getElementById('searchStats').style.display = 'none';
+    }
+}
+
+// Initialize enhanced search when passport finder is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for passport finder to be initialized
+    setTimeout(() => {
+        if (window.passportFinderInstance) {
+            window.enhancedSearch = new EnhancedSearch(window.passportFinderInstance);
+        }
+    }, 100);
+});
+
 // Netflix-Style Carousel Component
 class Carousel {
     constructor(element) {
@@ -1903,6 +2395,10 @@ class ParkPassportFinder {
 document.addEventListener('DOMContentLoaded', () => {
     const parkFinder = new ParkPassportFinder();
     window.parkFinder = parkFinder;
+    
+    // Initialize Enhanced Search
+    const enhancedSearch = new EnhancedSearch(parkFinder);
+    window.enhancedSearch = enhancedSearch;
 });
 
 // Image Zoom Modal Logic with Robust Debugging
