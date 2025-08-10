@@ -1856,6 +1856,9 @@ class ParkPassportFinder {
             case 'junior-ranger':
                 this.renderJuniorRangerView(container);
                 break;
+            case 'parks-near-me':
+                this.renderParksNearMeView(container);
+                break;
         }
     }
 
@@ -2406,6 +2409,54 @@ class ParkPassportFinder {
         });
 
         container.appendChild(grid);
+    }
+
+    renderParksNearMeView(container) {
+        container.innerHTML = `
+            <div class="parks-near-me-wrapper">
+                <div class="parks-near-me-info">
+                    <h3>🗺️ Find Parks Near You</h3>
+                    <p>Discover national parks and sites within driving distance of your location. Allow location access to get started.</p>
+                </div>
+                
+                <div class="location-controls">
+                    <button id="requestLocationBtn" class="location-btn primary" onclick="window.requestParksNearMe()">
+                        📍 Find Parks Near Me
+                    </button>
+                    <div id="locationStatus" class="location-status"></div>
+                </div>
+                
+                <div id="locationSettings" class="location-settings" style="display: none;">
+                    <div class="distance-selector">
+                        <label>Search radius:</label>
+                        <select id="radiusSelector">
+                            <option value="25">Within 25 miles</option>
+                            <option value="50" selected>Within 50 miles</option>
+                            <option value="100">Within 100 miles</option>
+                            <option value="250">Within 250 miles</option>
+                            <option value="500">Within 500 miles</option>
+                        </select>
+                    </div>
+                    
+                    <div class="park-type-filter">
+                        <label>Show:</label>
+                        <select id="parkTypeFilter">
+                            <option value="all">All Parks & Sites</option>
+                            <option value="National Park">National Parks Only</option>
+                            <option value="National Monument">National Monuments</option>
+                            <option value="National Historical Park">Historical Parks</option>
+                            <option value="National Seashore">Seashores & Lakeshores</option>
+                        </select>
+                    </div>
+                    
+                    <button id="updateLocationResults" class="location-btn secondary" onclick="window.updateParksNearMe()">
+                        Update Results
+                    </button>
+                </div>
+                
+                <div id="nearbyParksContainer" class="nearby-parks-container"></div>
+            </div>
+        `;
     }
 
 }
@@ -3116,8 +3167,9 @@ class PWAManager {
 const pwaManager = new PWAManager();
 window.pwaManager = pwaManager;
 
-// Hook into DOM updates to observe new images
-const originalInnerHTML = Element.prototype.innerHTML;
+// Hook into DOM updates to observe new images (temporarily disabled for debugging)
+/*
+const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
 Object.defineProperty(Element.prototype, 'innerHTML', {
     set: function(value) {
         originalInnerHTML.call(this, value);
@@ -3134,6 +3186,7 @@ Object.defineProperty(Element.prototype, 'innerHTML', {
         return originalInnerHTML.call(this);
     }
 });
+*/
 
 // Initialize lazy loading for existing images on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -3163,3 +3216,545 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 }); 
+
+// Parks Near Me Functionality
+class ParksNearMe {
+    constructor() {
+        this.userLocation = null;
+        this.radius = 50; // Default radius in miles
+        this.parkType = 'all'; // Default to show all parks
+        this.init();
+    }
+
+    init() {
+        const requestLocationBtn = document.getElementById('requestLocationBtn');
+        const radiusSelector = document.getElementById('radiusSelector');
+        const parkTypeFilter = document.getElementById('parkTypeFilter');
+        const updateResultsBtn = document.getElementById('updateLocationResults');
+
+        if (requestLocationBtn) {
+            requestLocationBtn.addEventListener('click', () => this.requestLocation());
+        }
+
+        if (radiusSelector) {
+            radiusSelector.addEventListener('change', (e) => {
+                this.radius = parseInt(e.target.value);
+                if (this.userLocation) {
+                    this.findNearbyParks();
+                }
+            });
+        }
+
+        if (parkTypeFilter) {
+            parkTypeFilter.addEventListener('change', (e) => {
+                this.parkType = e.target.value;
+                if (this.userLocation) {
+                    this.findNearbyParks();
+                }
+            });
+        }
+
+        if (updateResultsBtn) {
+            updateResultsBtn.addEventListener('click', () => {
+                if (this.userLocation) {
+                    this.findNearbyParks();
+                }
+            });
+        }
+    }
+
+    async requestLocation() {
+        const statusEl = document.getElementById('locationStatus');
+        const settingsEl = document.getElementById('locationSettings');
+        
+        if (!navigator.geolocation) {
+            this.showLocationStatus('Geolocation is not supported by your browser', 'error');
+            return;
+        }
+
+        this.showLocationStatus('Getting your location...', 'loading');
+
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000 // 5 minutes
+                });
+            });
+
+            this.userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+
+            this.showLocationStatus(`Location found! Searching within ${this.radius} miles...`, 'success');
+            
+            // Show settings and find parks
+            if (settingsEl) {
+                settingsEl.style.display = 'block';
+            }
+
+            await this.findNearbyParks();
+
+        } catch (error) {
+            let errorMessage = 'Unable to get your location. ';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Location access denied.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out.';
+                    break;
+                default:
+                    errorMessage += 'Unknown error occurred.';
+                    break;
+            }
+            this.showLocationStatus(errorMessage, 'error');
+        }
+    }
+
+    async findNearbyParks() {
+        if (!this.userLocation) {
+            this.showLocationStatus('Location not available', 'error');
+            return;
+        }
+
+        const container = document.getElementById('nearbyParksContainer');
+        if (!container) return;
+
+        this.showLocationStatus('Finding parks near you...', 'loading');
+
+        try {
+            // Get park locations from park-locations.js
+            const nearbyParks = this.calculateNearbyParks();
+            
+            if (nearbyParks.length === 0) {
+                container.innerHTML = `
+                    <div class="no-parks-message">
+                        <h3>No parks found within ${this.radius} miles</h3>
+                        <p>Try increasing your search radius or check a different location.</p>
+                    </div>
+                `;
+                this.showLocationStatus('No parks found in your area', 'info');
+                return;
+            }
+
+            // Display results
+            this.displayNearbyParks(nearbyParks);
+            this.showLocationStatus(`Found ${nearbyParks.length} park${nearbyParks.length !== 1 ? 's' : ''} within ${this.radius} miles`, 'success');
+
+        } catch (error) {
+            console.error('Error finding nearby parks:', error);
+            this.showLocationStatus('Error finding nearby parks', 'error');
+        }
+    }
+
+    calculateNearbyParks() {
+        if (!window.parkLocations) {
+            console.error('Park locations not loaded');
+            return [];
+        }
+
+        const nearbyParks = [];
+
+        // Calculate distance to each park
+        for (const [parkCode, parkData] of Object.entries(window.parkLocations)) {
+            if (!parkData.coordinates) continue;
+
+            const distance = this.calculateDistance(
+                this.userLocation.lat,
+                this.userLocation.lng,
+                parkData.coordinates.lat,
+                parkData.coordinates.lng
+            );
+
+            if (distance <= this.radius) {
+                // Find matching stamp data
+                const stampData = this.findStampData(parkCode);
+                
+                if (stampData && this.matchesParkTypeFilter(stampData)) {
+                    nearbyParks.push({
+                        ...stampData,
+                        distance: distance,
+                        coordinates: parkData.coordinates
+                    });
+                }
+            }
+        }
+
+        // Sort by distance
+        return nearbyParks.sort((a, b) => a.distance - b.distance);
+    }
+
+    findStampData(parkCode) {
+        // Search through all park data to find matching stamp
+        for (const category of Object.values(window.parkData)) {
+            if (category.parks) {
+                const park = category.parks.find(p => 
+                    p.code === parkCode || 
+                    p.name.toLowerCase().includes(parkCode.toLowerCase()) ||
+                    parkCode.toLowerCase().includes(p.name.toLowerCase().split(' ')[0])
+                );
+                if (park) return park;
+            }
+        }
+        return null;
+    }
+
+    matchesParkTypeFilter(stampData) {
+        if (this.parkType === 'all') return true;
+        
+        // Simple type matching based on stamp data
+        const name = stampData.name.toLowerCase();
+        switch (this.parkType) {
+            case 'National Park':
+                return name.includes('national park') && !name.includes('historical');
+            case 'National Monument':
+                return name.includes('national monument');
+            case 'National Historical Park':
+                return name.includes('historical');
+            case 'National Seashore':
+                return name.includes('seashore') || name.includes('lakeshore');
+            default:
+                return true;
+        }
+    }
+
+    displayNearbyParks(parks) {
+        const container = document.getElementById('nearbyParksContainer');
+        if (!container) return;
+
+        const html = parks.map(park => `
+            <div class="nearby-park-card" data-park-id="${park.id}">
+                <div class="park-image">
+                    <img src="${park.image}" alt="${park.name}" loading="lazy">
+                </div>
+                <div class="park-info">
+                    <h3>${park.name}</h3>
+                    <div class="park-distance">
+                        📍 ${park.distance.toFixed(1)} miles away
+                    </div>
+                    <div class="park-travel-time">
+                        🚗 ~${this.estimateTravelTime(park.distance)} drive
+                    </div>
+                    <p class="park-description">${park.description || 'Discover this national park site.'}</p>
+                </div>
+                <div class="park-actions">
+                    <button class="view-park-btn" onclick="window.parkFinder.showParkDetail('${park.id}')">
+                        View Details
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="nearby-parks-grid">
+                ${html}
+            </div>
+        `;
+    }
+
+    estimateTravelTime(distanceMiles) {
+        // Simple travel time estimation (assuming average speed)
+        const averageSpeed = 50; // mph
+        const hours = distanceMiles / averageSpeed;
+        
+        if (hours < 1) {
+            return `${Math.round(hours * 60)} min`;
+        } else if (hours < 2) {
+            const minutes = Math.round((hours - 1) * 60);
+            return minutes > 0 ? `1h ${minutes}m` : '1h';
+        } else {
+            return `${Math.round(hours)}h`;
+        }
+    }
+
+    calculateDistance(lat1, lng1, lat2, lng2) {
+        // Haversine formula for calculating distance between two points
+        const R = 3959; // Earth's radius in miles
+        const dLat = this.toRadians(lat2 - lat1);
+        const dLng = this.toRadians(lng2 - lng1);
+        
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    toRadians(degrees) {
+        return degrees * (Math.PI / 180);
+    }
+
+    showLocationStatus(message, type = 'info') {
+        const statusEl = document.getElementById('locationStatus');
+        if (!statusEl) return;
+
+        statusEl.className = `location-status ${type}`;
+        statusEl.textContent = message;
+        statusEl.style.display = 'block';
+    }
+}
+
+// Make ParksNearMe available globally
+window.ParksNearMe = ParksNearMe;
+
+// Global location functionality
+let userLocation = null;
+let currentRadius = 50;
+
+window.requestParksNearMe = async function() {
+    const statusEl = document.getElementById('locationStatus');
+    const settingsEl = document.getElementById('locationSettings');
+    
+    function showStatus(message, type = 'info') {
+        if (!statusEl) return;
+        statusEl.className = `location-status ${type}`;
+        statusEl.textContent = message;
+        statusEl.style.display = 'block';
+    }
+    
+    if (!navigator.geolocation) {
+        showStatus('Geolocation is not supported by your browser', 'error');
+        return;
+    }
+
+    showStatus('Getting your location...', 'loading');
+
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+            });
+        });
+
+        userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+        };
+
+        showStatus(`Location found! Searching within ${currentRadius} miles...`, 'success');
+        
+        // Show settings and find parks
+        if (settingsEl) {
+            settingsEl.style.display = 'block';
+        }
+
+        await findAndDisplayNearbyParks();
+
+    } catch (error) {
+        let errorMessage = 'Unable to get your location. ';
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                errorMessage += 'Location access denied.';
+                break;
+            case error.POSITION_UNAVAILABLE:
+                errorMessage += 'Location information unavailable.';
+                break;
+            case error.TIMEOUT:
+                errorMessage += 'Location request timed out.';
+                break;
+            default:
+                errorMessage += 'Unknown error occurred.';
+                break;
+        }
+        showStatus(errorMessage, 'error');
+    }
+};
+
+window.updateParksNearMe = async function() {
+    const radiusSelector = document.getElementById('radiusSelector');
+    if (radiusSelector) {
+        currentRadius = parseInt(radiusSelector.value);
+    }
+    
+    if (userLocation) {
+        await findAndDisplayNearbyParks();
+    }
+};
+
+async function findAndDisplayNearbyParks() {
+    const container = document.getElementById('nearbyParksContainer');
+    const statusEl = document.getElementById('locationStatus');
+    const parkTypeFilter = document.getElementById('parkTypeFilter');
+    
+    function showStatus(message, type = 'info') {
+        if (!statusEl) return;
+        statusEl.className = `location-status ${type}`;
+        statusEl.textContent = message;
+        statusEl.style.display = 'block';
+    }
+    
+    if (!container || !userLocation) return;
+
+    showStatus('Finding parks near you...', 'loading');
+
+    try {
+        const nearbyParks = [];
+        const selectedParkType = parkTypeFilter ? parkTypeFilter.value : 'all';
+
+        if (!window.parkLocations) {
+            showStatus('Park location data not loaded', 'error');
+            return;
+        }
+        // Calculate distance to each park
+        for (const [parkName, parkData] of Object.entries(window.parkLocations)) {
+            if (!parkData.coordinates && !parkData.lat) continue;
+
+            const parkCoords = parkData.coordinates || { lat: parkData.lat, lng: parkData.lng };
+            const distance = calculateDistance(
+                userLocation.lat,
+                userLocation.lng,
+                parkCoords.lat,
+                parkCoords.lng
+            );
+
+            if (distance <= currentRadius) {
+                nearbyParks.push({
+                    name: parkName,
+                    distance: distance,
+                    coordinates: parkCoords,
+                    type: parkData.type || 'National Site'
+                });
+            }
+        }
+
+        // Filter by park type
+        let filteredParks = nearbyParks;
+        if (selectedParkType !== 'all') {
+            filteredParks = nearbyParks.filter(park => {
+                const name = park.name.toLowerCase();
+                switch (selectedParkType) {
+                    case 'National Park':
+                        return name.includes('national park') || name.includes(' np');
+                    case 'National Monument':
+                        return name.includes('national monument') || name.includes(' nm');
+                    case 'National Historical Park':
+                        return name.includes('historical');
+                    case 'National Seashore':
+                        return name.includes('seashore') || name.includes('lakeshore');
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Sort by distance
+        filteredParks.sort((a, b) => a.distance - b.distance);
+        
+        if (filteredParks.length === 0) {
+            container.innerHTML = `
+                <div class="no-parks-message">
+                    <h3>No parks found within ${currentRadius} miles</h3>
+                    <p>Try increasing your search radius or check a different location.</p>
+                </div>
+            `;
+            showStatus('No parks found in your area', 'info');
+            return;
+        }
+
+        // Display results
+        const html = filteredParks.map(park => `
+            <div class="nearby-park-card" onclick="openMapDirections('${park.name}', ${park.coordinates.lat}, ${park.coordinates.lng})" style="cursor: pointer;">
+                <div class="park-info">
+                    <h3>${park.name}</h3>
+                    <div class="park-distance">
+                        📍 ${park.distance.toFixed(1)} miles away
+                    </div>
+                    <div class="park-travel-time">
+                        🚗 ~${estimateTravelTime(park.distance)} drive
+                    </div>
+                    <p class="park-description">Click to get directions to this ${park.type.toLowerCase()}.</p>
+                </div>
+            </div>
+        `).join('');
+
+        if (container) {
+            // Fix the parent display issue - the container is inside a hidden section
+            const parent = container.parentElement;
+            if (parent && parent.style.display === 'none') {
+                parent.style.display = 'block';
+                parent.style.visibility = 'visible';
+            }
+            
+            container.innerHTML = `
+                <div class="nearby-parks-grid">
+                    ${html}
+                </div>
+            `;
+        }
+        
+        showStatus(`Found ${filteredParks.length} park${filteredParks.length !== 1 ? 's' : ''} within ${currentRadius} miles`, 'success');
+
+    } catch (error) {
+        console.error('Error finding nearby parks:', error);
+        showStatus('Error finding nearby parks', 'error');
+    }
+}
+
+function calculateDistance(lat1, lng1, lat2, lng2) {
+    const R = 3959; // Earth's radius in miles
+    const dLat = toRadians(lat2 - lat1);
+    const dLng = toRadians(lng2 - lng1);
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function toRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+function estimateTravelTime(distanceMiles) {
+    const averageSpeed = 50; // mph
+    const hours = distanceMiles / averageSpeed;
+    
+    if (hours < 1) {
+        return `${Math.round(hours * 60)} min`;
+    } else if (hours < 2) {
+        const minutes = Math.round((hours - 1) * 60);
+        return minutes > 0 ? `1h ${minutes}m` : '1h';
+    } else {
+        return `${Math.round(hours)}h`;
+    }
+}
+
+function openMapDirections(parkName, lat, lng) {
+    // Try Apple Maps first on iOS/Mac, then Google Maps as fallback
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isMac = /Mac/.test(navigator.userAgent);
+    
+    let mapUrl;
+    if (isIOS || isMac) {
+        // Apple Maps
+        mapUrl = `maps://maps.apple.com/?daddr=${lat},${lng}&q=${encodeURIComponent(parkName)}`;
+    } else {
+        // Google Maps
+        mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(parkName)}`;
+    }
+    
+    // Try to open native app first, fallback to web
+    const link = document.createElement('a');
+    link.href = mapUrl;
+    link.target = '_blank';
+    link.click();
+    
+    // If native app didn't open (after short delay), open Google Maps web
+    setTimeout(() => {
+        if (!document.hidden) {
+            const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+            window.open(fallbackUrl, '_blank');
+        }
+    }, 1000);
+}
