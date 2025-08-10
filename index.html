@@ -144,6 +144,51 @@
                 <div id="resultsContainer" class="results-grid"></div>
             </section>
 
+            <!-- Parks Near Me Section -->
+            <section class="parks-near-me-section" id="parksNearMeSection" style="display: none;">
+                <div class="section-header">
+                    <h2>🗺️ Parks Near Me</h2>
+                    <p class="section-description">Discover national parks and sites within driving distance of your location</p>
+                </div>
+                
+                <div class="location-controls">
+                    <button id="requestLocationBtn" class="location-btn primary">
+                        📍 Find Parks Near Me
+                    </button>
+                    <div id="locationStatus" class="location-status"></div>
+                </div>
+                
+                <div id="locationSettings" class="location-settings" style="display: none;">
+                    <div class="distance-selector">
+                        <label>Search radius:</label>
+                        <select id="radiusSelector">
+                            <option value="25">Within 25 miles</option>
+                            <option value="50" selected>Within 50 miles</option>
+                            <option value="100">Within 100 miles</option>
+                            <option value="250">Within 250 miles</option>
+                            <option value="500">Within 500 miles</option>
+                        </select>
+                    </div>
+                    
+                    <div class="park-type-filter">
+                        <label>Show:</label>
+                        <select id="parkTypeFilter">
+                            <option value="all">All Parks & Sites</option>
+                            <option value="National Park">National Parks Only</option>
+                            <option value="National Monument">National Monuments</option>
+                            <option value="National Historical Park">Historical Parks</option>
+                            <option value="National Seashore">Seashores & Lakeshores</option>
+                        </select>
+                    </div>
+                    
+                    <button id="updateLocationResults" class="location-btn secondary">
+                        Update Results
+                    </button>
+                </div>
+                
+                <div id="nearbyParksContainer" class="nearby-parks-container"></div>
+            </section>
+
             <!-- Browse Section -->
             <section class="browse-section" id="browseSection">
                 <h2>Browse Stamp Collection</h2>
@@ -153,6 +198,7 @@
                     <button class="tab-btn" data-view="region">By Region</button>
                     <button class="tab-btn" data-view="individual-stickers">By Individual Sticker</button>
                     <button class="tab-btn" data-view="junior-ranger">By Junior Ranger</button>
+                    <button class="tab-btn" data-view="parks-near-me">Parks Near Me</button>
                 </div>
                 <div id="browseContainer" class="browse-container"></div>
             </section>
@@ -169,6 +215,7 @@
 
     <script src="data.js"></script>
     <script src="park-sticker-mapping-complete.js"></script>
+    <script src="park-locations.js"></script>
     <!-- Image Zoom Modal -->
     <div id="imageModal" class="modal-overlay" tabindex="-1" aria-modal="true" role="dialog" style="display: none;">
         <div class="modal-content" role="document">
