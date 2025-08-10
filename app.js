@@ -54,6 +54,226 @@ class ThemeManager {
 // Initialize theme manager
 const themeManager = new ThemeManager();
 
+// Netflix-Style Hero Carousel
+class HeroCarousel {
+    constructor() {
+        this.currentSlide = 0;
+        this.slides = [];
+        this.isPlaying = true;
+        this.autoplayInterval = null;
+        this.slideInterval = 5000; // 5 seconds
+        this.init();
+    }
+
+    async init() {
+        await this.createHeroSlides();
+        this.setupEventListeners();
+        this.startAutoplay();
+    }
+
+    async createHeroSlides() {
+        // Featured parks for hero carousel
+        const featuredParks = [
+            {
+                year: 2024,
+                park: "Yellowstone National Park",
+                description: "America's first national park, featuring geysers, hot springs, and diverse wildlife across Wyoming, Montana, and Idaho.",
+                image: "images/stamps/2024-stamps.jpg"
+            },
+            {
+                year: 2023,
+                park: "Grand Canyon National Park", 
+                description: "One of the world's most spectacular natural wonders, carved by the Colorado River over millions of years.",
+                image: "images/stamps/2023-stamps.jpg"
+            },
+            {
+                year: 2022,
+                park: "Yosemite National Park",
+                description: "Iconic granite cliffs, waterfalls, and giant sequoias in California's Sierra Nevada mountains.",
+                image: "images/stamps/2022-stamps.jpg"
+            },
+            {
+                year: 2021,
+                park: "Great Smoky Mountains National Park",
+                description: "America's most visited national park, straddling Tennessee and North Carolina with rich biodiversity.",
+                image: "images/stamps/2021-stamps.jpg"
+            },
+            {
+                year: 2020,
+                park: "Zion National Park",
+                description: "Utah's first national park featuring towering red cliffs, narrow slot canyons, and the Virgin River.",
+                image: "images/stamps/2020-stamps.jpg"
+            }
+        ];
+
+        this.slides = featuredParks;
+        this.renderSlides();
+        this.renderIndicators();
+        this.showSlide(0);
+    }
+
+    renderSlides() {
+        const slidesContainer = document.getElementById('heroSlides');
+        const slidesHTML = this.slides.map((slide, index) => `
+            <div class="hero-slide ${index === 0 ? 'active ken-burns' : ''}" 
+                 style="background-image: url('${slide.image}')"
+                 data-slide="${index}">
+            </div>
+        `).join('');
+        
+        slidesContainer.innerHTML = slidesHTML;
+    }
+
+    renderIndicators() {
+        const indicatorsContainer = document.getElementById('heroIndicators');
+        const indicatorsHTML = this.slides.map((_, index) => `
+            <button class="hero-indicator ${index === 0 ? 'active' : ''}" 
+                    data-slide="${index}"
+                    aria-label="Go to slide ${index + 1}">
+            </button>
+        `).join('');
+        
+        indicatorsContainer.innerHTML = indicatorsHTML;
+    }
+
+    setupEventListeners() {
+        // Navigation buttons
+        document.getElementById('heroPrevBtn').addEventListener('click', () => this.prevSlide());
+        document.getElementById('heroNextBtn').addEventListener('click', () => this.nextSlide());
+        
+        // Pause/play button
+        const pauseBtn = document.getElementById('heroPauseBtn');
+        pauseBtn.addEventListener('click', () => this.toggleAutoplay());
+        pauseBtn.classList.add('playing');
+        
+        // Indicator dots
+        document.getElementById('heroIndicators').addEventListener('click', (e) => {
+            if (e.target.classList.contains('hero-indicator')) {
+                const slideIndex = parseInt(e.target.dataset.slide);
+                this.goToSlide(slideIndex);
+            }
+        });
+
+        // Hero action buttons
+        document.getElementById('heroExploreBtn').addEventListener('click', () => {
+            // Scroll to carousel section
+            document.querySelector('.carousel-section').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        });
+
+        document.getElementById('heroBuyBtn').addEventListener('click', () => {
+            const currentSlideData = this.slides[this.currentSlide];
+            if (currentSlideData) {
+                window.open(window.generatePurchaseLink(currentSlideData.year), '_blank');
+            }
+        });
+
+        // Pause on hover
+        const heroCarousel = document.querySelector('.hero-carousel');
+        heroCarousel.addEventListener('mouseenter', () => this.pauseAutoplay());
+        heroCarousel.addEventListener('mouseleave', () => {
+            if (this.isPlaying) this.startAutoplay();
+        });
+    }
+
+    showSlide(index) {
+        const slides = document.querySelectorAll('.hero-slide');
+        const indicators = document.querySelectorAll('.hero-indicator');
+        
+        // Remove active classes
+        slides.forEach(slide => {
+            slide.classList.remove('active', 'ken-burns');
+        });
+        indicators.forEach(indicator => {
+            indicator.classList.remove('active');
+        });
+        
+        // Add active classes
+        if (slides[index]) {
+            slides[index].classList.add('active', 'ken-burns');
+            indicators[index].classList.add('active');
+        }
+        
+        // Update content
+        this.updateHeroContent(index);
+        this.currentSlide = index;
+    }
+
+    updateHeroContent(index) {
+        const slide = this.slides[index];
+        if (!slide) return;
+
+        const title = document.getElementById('heroTitle');
+        const description = document.getElementById('heroDescription');
+        
+        // Animate content change
+        const content = document.querySelector('.hero-content');
+        content.style.opacity = '0';
+        
+        setTimeout(() => {
+            title.textContent = slide.park;
+            description.textContent = slide.description;
+            content.style.opacity = '1';
+        }, 300);
+    }
+
+    nextSlide() {
+        const next = (this.currentSlide + 1) % this.slides.length;
+        this.goToSlide(next);
+    }
+
+    prevSlide() {
+        const prev = this.currentSlide === 0 ? this.slides.length - 1 : this.currentSlide - 1;
+        this.goToSlide(prev);
+    }
+
+    goToSlide(index) {
+        this.showSlide(index);
+        // Restart autoplay timer
+        if (this.isPlaying) {
+            this.startAutoplay();
+        }
+    }
+
+    startAutoplay() {
+        this.clearAutoplay();
+        this.autoplayInterval = setInterval(() => {
+            this.nextSlide();
+        }, this.slideInterval);
+    }
+
+    pauseAutoplay() {
+        this.clearAutoplay();
+    }
+
+    clearAutoplay() {
+        if (this.autoplayInterval) {
+            clearInterval(this.autoplayInterval);
+            this.autoplayInterval = null;
+        }
+    }
+
+    toggleAutoplay() {
+        const pauseBtn = document.getElementById('heroPauseBtn');
+        
+        if (this.isPlaying) {
+            this.isPlaying = false;
+            this.pauseAutoplay();
+            pauseBtn.classList.remove('playing');
+            pauseBtn.classList.add('paused');
+        } else {
+            this.isPlaying = true;
+            this.startAutoplay();
+            pauseBtn.classList.remove('paused');
+            pauseBtn.classList.add('playing');
+        }
+    }
+}
+
+// Initialize hero carousel
+const heroCarousel = new HeroCarousel();
+
 // Netflix-Style Carousel Component
 class Carousel {
     constructor(element) {
