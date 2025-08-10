@@ -348,17 +348,30 @@ class EnhancedSearch {
         const regionFilter = document.getElementById('regionFilter');
         const clearFilters = document.getElementById('clearFilters');
 
-        // Search input with debouncing
-        searchInput.addEventListener('input', (e) => {
+        // Search input with debouncing - multiple events for mobile compatibility
+        const searchHandler = (e) => {
             const query = e.target.value;
             this.handleSearchInput(query);
+        };
+        
+        searchInput.addEventListener('input', searchHandler);
+        searchInput.addEventListener('keyup', searchHandler); // Additional for mobile
+        searchInput.addEventListener('paste', (e) => {
+            // Handle paste events on mobile
+            setTimeout(() => searchHandler(e), 10);
         });
 
-        // Search input focus/blur
+        // Search input focus/blur with mobile considerations
         searchInput.addEventListener('focus', () => this.showSearchUI());
         searchInput.addEventListener('blur', (e) => {
-            // Delay hiding to allow clicks on suggestions
-            setTimeout(() => this.hideSearchUI(), 150);
+            // Longer delay for mobile touch events
+            setTimeout(() => this.hideSearchUI(), 300);
+        });
+        
+        // Mobile-specific touch events for suggestions
+        searchInput.addEventListener('touchend', (e) => {
+            // Prevent blur on mobile when tapping suggestions
+            e.stopPropagation();
         });
 
         // Clear search
@@ -381,21 +394,33 @@ class EnhancedSearch {
         // Clear all filters
         clearFilters.addEventListener('click', () => this.clearAllFilters());
 
-        // Suggestion clicks
-        document.getElementById('searchSuggestions').addEventListener('click', (e) => {
+        // Suggestion clicks - handle both click and touch for mobile
+        const handleSuggestionInteraction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const suggestionItem = e.target.closest('.suggestion-item');
             if (suggestionItem) {
                 this.selectSuggestion(suggestionItem);
             }
-        });
+        };
+        
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        suggestionsContainer.addEventListener('click', handleSuggestionInteraction);
+        suggestionsContainer.addEventListener('touchend', handleSuggestionInteraction);
 
-        // Search history clicks
-        document.getElementById('searchHistoryList').addEventListener('click', (e) => {
+        // Search history clicks - handle both click and touch for mobile
+        const handleHistoryInteraction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const historyItem = e.target.closest('.search-history-item');
             if (historyItem) {
                 this.selectHistoryItem(historyItem.dataset.query);
             }
-        });
+        };
+        
+        const historyContainer = document.getElementById('searchHistoryList');
+        historyContainer.addEventListener('click', handleHistoryInteraction);
+        historyContainer.addEventListener('touchend', handleHistoryInteraction);
 
         // Active filter chip removal
         document.getElementById('activeFilters').addEventListener('click', (e) => {
@@ -429,6 +454,8 @@ class EnhancedSearch {
     }
 
     performSearch(query) {
+        console.log('EnhancedSearch: performSearch called with query:', query);
+        
         if (!query.trim()) {
             this.passportFinder.clearSearch();
             this.hideSearchStats();
@@ -440,9 +467,11 @@ class EnhancedSearch {
 
         // Perform fuzzy search
         const results = this.fuzzySearch(query);
+        console.log('EnhancedSearch: fuzzy search results:', results.length);
         
         // Apply current filters
         const filteredResults = this.applyFiltersToResults(results);
+        console.log('EnhancedSearch: filtered results:', filteredResults.length);
         
         // Update UI
         this.passportFinder.displaySearchResults(filteredResults, query);
@@ -1460,22 +1489,7 @@ class ParkPassportFinder {
     }
 
     setupEventListeners() {
-        // Search functionality
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
-        searchInput.addEventListener('focus', () => this.showSuggestions());
-        searchInput.addEventListener('blur', () => {
-            setTimeout(() => this.hideSuggestions(), 200);
-        });
-        
-        // Allow Enter key to search with current partial term
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.hideSuggestions();
-                this.handleSearch(searchInput.value);
-            }
-        });
+        // Note: Search functionality now handled by EnhancedSearch class
 
         // Filter functionality
         document.getElementById('yearFilter').addEventListener('change', () => this.applyFilters());
