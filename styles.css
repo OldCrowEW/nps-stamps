@@ -2784,3 +2784,154 @@ footer a:hover {
         font-size: 14px;
     }
 }
+
+/* Performance Optimization Styles */
+/* Lazy Loading States */
+img.lazy-loading {
+    opacity: 0;
+    transition: opacity var(--duration-normal) ease-out;
+    background: var(--bg-light);
+}
+
+img.lazy-loaded {
+    opacity: 1;
+}
+
+img.lazy-error {
+    opacity: 0.7;
+    filter: grayscale(100%);
+}
+
+/* Lazy Loading Placeholder Animation */
+.lazy-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Virtual Scrolling Optimizations */
+.virtual-scroll-container {
+    contain: layout style paint;
+    will-change: scroll-position;
+}
+
+.virtual-list {
+    contain: layout style;
+}
+
+.virtual-visible-items {
+    contain: layout style paint;
+    will-change: transform;
+}
+
+/* Performance-Optimized Animations */
+.optimize-animations * {
+    animation-duration: 0.01ms !important;
+    animation-delay: -1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+}
+
+/* GPU Acceleration for Critical Elements */
+.gpu-accelerated,
+.carousel-track,
+.hero-slides,
+.card:hover {
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Reduce Motion for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .hero-carousel {
+        animation: none !important;
+    }
+    
+    .card:hover {
+        transform: none !important;
+    }
+}
+
+/* Critical Resource Hints */
+.preload-hint {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Image Compression Indicators */
+.webp-supported img {
+    image-rendering: optimizeQuality;
+}
+
+.low-bandwidth img {
+    image-rendering: optimizeSpeed;
+}
+
+/* Performance Monitoring Badge */
+.perf-monitor {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    z-index: 9999;
+    display: none;
+}
+
+.perf-monitor.visible {
+    display: block;
+}
+
+/* Smooth Scrolling Optimizations */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Memory Usage Optimizations */
+.offscreen {
+    visibility: hidden;
+    position: absolute;
+    left: -9999px;
+}
+
+/* Critical Above-the-fold Optimizations */
+.above-fold {
+    contain: layout style;
+}
+
+.below-fold {
+    contain: layout style paint;
+}
