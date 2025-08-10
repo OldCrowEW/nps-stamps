@@ -64,17 +64,31 @@
                 <div id="detailContent" class="detail-content"></div>
             </section>
 
-            <!-- Search Section -->
+            <!-- Enhanced Search Section -->
             <section class="search-section" id="searchSection">
                 <div class="search-container">
-                    <input 
-                        type="text" 
-                        id="searchInput" 
-                        placeholder="Search for a park name..."
-                        autocomplete="off"
-                    >
+                    <div class="search-input-wrapper">
+                        <div class="search-icon">🔍</div>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search parks, regions, or years..."
+                            autocomplete="off"
+                        >
+                        <button id="searchClear" class="search-clear" style="display: none;">×</button>
+                    </div>
                     <div id="searchSuggestions" class="suggestions"></div>
+                    <div id="searchHistory" class="search-history" style="display: none;">
+                        <div class="search-history-header">
+                            <span>Recent searches</span>
+                            <button id="clearHistory" class="clear-history-btn">Clear</button>
+                        </div>
+                        <div id="searchHistoryList" class="search-history-list"></div>
+                    </div>
                 </div>
+                
+                <!-- Active Filter Chips -->
+                <div id="activeFilters" class="active-filters" style="display: none;"></div>
                 
                 <div class="filters">
                     <select id="yearFilter">
@@ -95,7 +109,12 @@
                         <option value="Pacific Northwest & Alaska">Pacific Northwest & Alaska</option>
                     </select>
                     
-                    <button id="clearFilters" class="clear-btn">Clear Filters</button>
+                    <button id="clearFilters" class="clear-btn">Clear All</button>
+                </div>
+
+                <!-- Search Stats -->
+                <div id="searchStats" class="search-stats" style="display: none;">
+                    <span id="searchStatsText"></span>
                 </div>
             </section>
 
