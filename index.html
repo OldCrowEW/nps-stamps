@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Park Passport Finder - Find Your National Park Stickers</title>
+    
+    <!-- Performance Resource Hints -->
+    <link rel="preconnect" href="https://shop.americasnationalparks.org">
+    <link rel="dns-prefetch" href="//shop.americasnationalparks.org">
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="data.js" as="script">
+    <link rel="preload" href="app.js" as="script">
+    
+    <!-- Critical Images Preload -->
+    <link rel="preload" href="images/stamps/2024-stamps.jpg" as="image">
+    <link rel="preload" href="images/stamps/2023-stamps.jpg" as="image">
+    
     <link rel="stylesheet" href="styles.css">
     <meta name="description" content="Find which Passport To Your National Parks® stamp set contains your favorite park. Search by park name, year, or region.">
 </head>

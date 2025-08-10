@@ -1,4 +1,4 @@
-console.log('[DEBUG] app.js loaded');
+// app.js loaded
 
 // Theme Management System
 class ThemeManager {
@@ -1078,7 +1078,7 @@ class ParkPassportFinder {
             </div>
             <div class="year-detail-content">
                 <div class="stamp-set-image-large">
-                    <img src="${window.getStampSetImage(year)}" alt="${year} Stamp Set" loading="lazy">
+                    <img src="${window.getStampSetImage(year)}" alt="${year} Stamp Set" loading="lazy" class="lazy-image">
                 </div>
                 <div class="stamp-set-info">
                     <h2>Set Information</h2>
@@ -2029,10 +2029,9 @@ class ParkPassportFinder {
     }
 
     renderTimelineView(container) {
+        const sortedData = [...this.data].sort((a, b) => b.year - a.year);
         const timeline = document.createElement('div');
         timeline.className = 'timeline';
-
-        const sortedData = [...this.data].sort((a, b) => b.year - a.year);
 
         sortedData.forEach(yearData => {
             const item = document.createElement('div');
@@ -2056,7 +2055,7 @@ class ParkPassportFinder {
                 
                 <div class="timeline-content">
                     <div class="timeline-image-container" data-route="year/${yearData.year}">
-                        <img src="${stampSetImage}" alt="${yearData.year} Stamp Set" class="timeline-image" loading="lazy">
+                        <img data-src="${stampSetImage}" src="" alt="${yearData.year} Stamp Set" class="timeline-image lazy-image" loading="lazy">
                     </div>
                     
                     <div class="timeline-stamps">
@@ -2410,7 +2409,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Open modal with given image src
     function openModal(imgSrc, altText) {
-        console.log('[DEBUG] openModal called with src:', imgSrc, 'alt:', altText);
+        // Modal opened
         lastFocusedElement = document.activeElement;
         modalImg.src = imgSrc;
         modalImg.alt = altText || 'Zoomed Stamp Set';
@@ -2422,7 +2421,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Close modal
     function closeModal() {
-        console.log('[DEBUG] closeModal called');
+        // Modal closed
         modal.style.display = 'none';
         modal.setAttribute('aria-hidden', 'true');
         modalImg.src = '';
@@ -2432,14 +2431,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Click close button
     closeBtn.addEventListener('click', function() {
-        console.log('[DEBUG] Close button clicked');
+        // Close button clicked
         closeModal();
     });
 
     // Click outside modal content closes
     modal.addEventListener('mousedown', function(e) {
         if (e.target === modal) {
-            console.log('[DEBUG] Clicked outside modal content');
+            // DEBUG: Clicked outside modal content');
             closeModal();
         }
     });
@@ -2447,7 +2446,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ESC key closes
     document.addEventListener('keydown', function(e) {
         if (modal.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
-            console.log('[DEBUG] ESC key pressed');
+            // DEBUG: ESC key pressed');
             closeModal();
         }
         // Trap focus in modal
@@ -2491,7 +2490,7 @@ document.addEventListener('DOMContentLoaded', () => {
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('[DEBUG] Year detail image clicked:', img.src);
+                // DEBUG: Year detail image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
         });
@@ -2501,7 +2500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('[DEBUG] Park detail image clicked:', img.src);
+                // DEBUG: Park detail image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
         });
@@ -2511,7 +2510,7 @@ document.addEventListener('DOMContentLoaded', () => {
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('[DEBUG] Timeline image clicked:', img.src);
+                // DEBUG: Timeline image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
         });
@@ -2521,7 +2520,7 @@ document.addEventListener('DOMContentLoaded', () => {
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('[DEBUG] Individual sticker image clicked:', img.src);
+                // DEBUG: Individual sticker image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
         });
@@ -2531,11 +2530,11 @@ document.addEventListener('DOMContentLoaded', () => {
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                console.log('[DEBUG] Park detail sticker image clicked:', img.src);
+                // DEBUG: Park detail sticker image clicked:', img.src);
                 openModal(img.src, img.alt);
             });
         });
-        console.log('[DEBUG] attachZoomListeners called');
+        // DEBUG: attachZoomListeners called');
     }
 
     // Patch render methods to re-attach listeners
@@ -2573,4 +2572,338 @@ document.addEventListener('DOMContentLoaded', () => {
 function showBrowseSection(show) {
     const browseSection = document.getElementById('browseSection');
     if (browseSection) browseSection.style.display = show ? '' : 'none';
-} 
+}
+
+// Performance Optimization System
+class PerformanceOptimizer {
+    constructor() {
+        this.observedImages = new Set();
+        this.imageCache = new Map();
+        this.lazyImageObserver = null;
+        this.init();
+    }
+
+    init() {
+        this.setupLazyLoading();
+        this.setupImageOptimization();
+        this.setupPerformanceMonitoring();
+    }
+
+    setupLazyLoading() {
+        // Create Intersection Observer for lazy loading
+        if ('IntersectionObserver' in window) {
+            this.lazyImageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        this.loadImage(img);
+                        observer.unobserve(img);
+                        this.observedImages.delete(img);
+                    }
+                });
+            }, {
+                rootMargin: '50px 0px', // Start loading 50px before entering viewport
+                threshold: 0.01
+            });
+        }
+    }
+
+    setupImageOptimization() {
+        // Check WebP support
+        this.supportsWebP = this.checkWebPSupport();
+        
+        // Preload critical images
+        this.preloadCriticalImages();
+    }
+
+    checkWebPSupport() {
+        return new Promise(resolve => {
+            const webP = new Image();
+            webP.onload = webP.onerror = () => resolve(webP.height === 2);
+            webP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+        });
+    }
+
+    async preloadCriticalImages() {
+        // Preload hero carousel images
+        const heroImages = [
+            'images/stamps/2024-stamps.jpg',
+            'images/stamps/2023-stamps.jpg'
+        ];
+
+        heroImages.forEach(src => this.preloadImage(src));
+    }
+
+    preloadImage(src) {
+        if (this.imageCache.has(src)) return;
+        
+        const img = new Image();
+        img.src = src;
+        this.imageCache.set(src, img);
+    }
+
+    observeImage(img) {
+        if (!this.lazyImageObserver || this.observedImages.has(img)) return;
+        
+        // Set placeholder while loading
+        if (img.dataset.src && (!img.src || img.src === window.location.href || img.src === '')) {
+            img.src = this.createPlaceholder(img.width || 300, img.height || 200);
+            img.classList.add('lazy-loading');
+        }
+        
+        this.lazyImageObserver.observe(img);
+        this.observedImages.add(img);
+    }
+
+    createPlaceholder(width, height) {
+        // Create SVG placeholder
+        const svg = `
+            <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="#f0f0f0"/>
+                <text x="50%" y="50%" text-anchor="middle" dy="0.3em" fill="#999" font-family="Arial, sans-serif" font-size="14">
+                    Loading...
+                </text>
+            </svg>
+        `;
+        return `data:image/svg+xml;base64,${btoa(svg)}`;
+    }
+
+    async loadImage(img) {
+        const originalSrc = img.dataset.src || img.getAttribute('data-src');
+        if (!originalSrc) return;
+
+        try {
+            // Show loading state
+            img.classList.add('lazy-loading');
+            
+            // Load optimized version if available
+            const optimizedSrc = await this.getOptimizedImageSrc(originalSrc);
+            
+            // Create new image for preloading
+            const newImg = new Image();
+            
+            return new Promise((resolve, reject) => {
+                newImg.onload = () => {
+                    img.src = optimizedSrc;
+                    img.classList.remove('lazy-loading');
+                    img.classList.add('lazy-loaded');
+                    
+                    // Smooth fade-in effect
+                    requestAnimationFrame(() => {
+                        img.style.opacity = '1';
+                    });
+                    
+                    resolve();
+                };
+                
+                newImg.onerror = () => {
+                    // Fallback to original src
+                    img.src = originalSrc;
+                    img.classList.remove('lazy-loading');
+                    img.classList.add('lazy-error');
+                    reject();
+                };
+                
+                newImg.src = optimizedSrc;
+            });
+            
+        } catch (error) {
+            console.warn('Failed to load optimized image:', error);
+            img.src = originalSrc;
+            img.classList.remove('lazy-loading');
+        }
+    }
+
+    async getOptimizedImageSrc(src) {
+        // Try WebP version first if supported
+        if (await this.supportsWebP) {
+            const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+            // In a real implementation, you'd check if WebP version exists
+            // For now, return original src
+        }
+        
+        return src;
+    }
+
+    // Virtual Scrolling for large lists
+    createVirtualList(container, items, renderItem, itemHeight = 100) {
+        const scrollContainer = document.createElement('div');
+        scrollContainer.className = 'virtual-scroll-container';
+        scrollContainer.style.cssText = `
+            height: 400px;
+            overflow-y: auto;
+            position: relative;
+        `;
+        
+        const listContainer = document.createElement('div');
+        listContainer.className = 'virtual-list';
+        listContainer.style.cssText = `
+            height: ${items.length * itemHeight}px;
+            position: relative;
+        `;
+        
+        const visibleContainer = document.createElement('div');
+        visibleContainer.className = 'virtual-visible-items';
+        visibleContainer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        `;
+        
+        let startIndex = 0;
+        let endIndex = Math.ceil(400 / itemHeight);
+        
+        const renderVisible = () => {
+            const scrollTop = scrollContainer.scrollTop;
+            startIndex = Math.floor(scrollTop / itemHeight);
+            endIndex = Math.min(startIndex + Math.ceil(400 / itemHeight) + 1, items.length);
+            
+            const visibleItems = items.slice(startIndex, endIndex);
+            const itemsHTML = visibleItems.map((item, index) => 
+                renderItem(item, startIndex + index)
+            ).join('');
+            
+            visibleContainer.innerHTML = itemsHTML;
+            visibleContainer.style.transform = `translateY(${startIndex * itemHeight}px)`;
+            
+            // Observe new images
+            visibleContainer.querySelectorAll('img[data-src]').forEach(img => {
+                this.observeImage(img);
+            });
+        };
+        
+        scrollContainer.addEventListener('scroll', this.throttle(renderVisible, 16)); // 60fps
+        
+        listContainer.appendChild(visibleContainer);
+        scrollContainer.appendChild(listContainer);
+        container.appendChild(scrollContainer);
+        
+        renderVisible();
+        
+        return {
+            container: scrollContainer,
+            update: renderVisible
+        };
+    }
+
+    // Throttle function for performance
+    throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        }
+    }
+
+    // Debounce function for performance
+    debounce(func, delay) {
+        let timeoutId;
+        return function(...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    // Performance monitoring
+    setupPerformanceMonitoring() {
+        if ('performance' in window) {
+            // Monitor page load times
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (perfData) {
+                        console.log('Page Performance:', {
+                            loadTime: Math.round(perfData.loadEventEnd - perfData.loadEventStart),
+                            domContentLoaded: Math.round(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart),
+                            firstPaint: this.getFirstPaint(),
+                            largestContentfulPaint: this.getLCP()
+                        });
+                    }
+                }, 1000);
+            });
+        }
+    }
+
+    getFirstPaint() {
+        const paintEntries = performance.getEntriesByType('paint');
+        const firstPaint = paintEntries.find(entry => entry.name === 'first-paint');
+        return firstPaint ? Math.round(firstPaint.startTime) : null;
+    }
+
+    getLCP() {
+        return new Promise(resolve => {
+            new PerformanceObserver(list => {
+                const entries = list.getEntries();
+                const lastEntry = entries[entries.length - 1];
+                resolve(Math.round(lastEntry.startTime));
+            }).observe({ entryTypes: ['largest-contentful-paint'] });
+        });
+    }
+
+    // Cache management
+    clearImageCache() {
+        this.imageCache.clear();
+    }
+
+    getCacheSize() {
+        return this.imageCache.size;
+    }
+}
+
+// Initialize performance optimizer
+const performanceOptimizer = new PerformanceOptimizer();
+window.performanceOptimizer = performanceOptimizer;
+
+// Hook into DOM updates to observe new images
+const originalInnerHTML = Element.prototype.innerHTML;
+Object.defineProperty(Element.prototype, 'innerHTML', {
+    set: function(value) {
+        originalInnerHTML.call(this, value);
+        // Observe new lazy images
+        setTimeout(() => {
+            this.querySelectorAll('img[data-src]').forEach(img => {
+                if (performanceOptimizer && performanceOptimizer.observeImage) {
+                    performanceOptimizer.observeImage(img);
+                }
+            });
+        }, 0);
+    },
+    get: function() {
+        return originalInnerHTML.call(this);
+    }
+});
+
+// Initialize lazy loading for existing images on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Observe all existing lazy images
+    document.querySelectorAll('img[data-src]').forEach(img => {
+        if (performanceOptimizer && performanceOptimizer.observeImage) {
+            performanceOptimizer.observeImage(img);
+        }
+    });
+    
+    // Add performance monitoring badge (for development)
+    if (window.location.search.includes('perf=1')) {
+        const perfBadge = document.createElement('div');
+        perfBadge.className = 'perf-monitor visible';
+        perfBadge.innerHTML = '<div id="perfStats">Loading...</div>';
+        document.body.appendChild(perfBadge);
+        
+        // Update performance stats periodically
+        setInterval(() => {
+            const stats = document.getElementById('perfStats');
+            if (stats && performanceOptimizer) {
+                stats.innerHTML = `
+                    Images: ${performanceOptimizer.getCacheSize()}<br>
+                    Observed: ${performanceOptimizer.observedImages.size}
+                `;
+            }
+        }, 1000);
+    }
+}); 
