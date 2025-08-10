@@ -54,6 +54,138 @@ class ThemeManager {
 // Initialize theme manager
 const themeManager = new ThemeManager();
 
+// Netflix-Style Carousel Component
+class Carousel {
+    constructor(element) {
+        this.container = element;
+        this.track = element.querySelector('.carousel-track');
+        this.prevBtn = element.querySelector('.carousel-nav.prev');
+        this.nextBtn = element.querySelector('.carousel-nav.next');
+        this.itemWidth = 280; // Default item width + gap
+        
+        this.init();
+    }
+
+    init() {
+        if (this.prevBtn && this.nextBtn) {
+            this.prevBtn.addEventListener('click', () => this.scrollPrev());
+            this.nextBtn.addEventListener('click', () => this.scrollNext());
+        }
+        
+        // Add touch support
+        this.addTouchSupport();
+        
+        // Update navigation visibility on scroll
+        this.track.addEventListener('scroll', () => this.updateNavigation());
+        this.updateNavigation();
+    }
+
+    scrollPrev() {
+        const scrollAmount = this.itemWidth * 3; // Scroll 3 items
+        this.track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+
+    scrollNext() {
+        const scrollAmount = this.itemWidth * 3; // Scroll 3 items
+        this.track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+
+    updateNavigation() {
+        if (!this.prevBtn || !this.nextBtn) return;
+        
+        const { scrollLeft, scrollWidth, clientWidth } = this.track;
+        
+        // Hide prev button if at start
+        this.prevBtn.style.display = scrollLeft <= 10 ? 'none' : 'flex';
+        
+        // Hide next button if at end
+        this.nextBtn.style.display = 
+            scrollLeft >= scrollWidth - clientWidth - 10 ? 'none' : 'flex';
+    }
+
+    addTouchSupport() {
+        let isDown = false;
+        let startX;
+        let scrollStart;
+
+        this.track.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - this.track.offsetLeft;
+            scrollStart = this.track.scrollLeft;
+            this.track.style.cursor = 'grabbing';
+        });
+
+        this.track.addEventListener('mouseleave', () => {
+            isDown = false;
+            this.track.style.cursor = 'grab';
+        });
+
+        this.track.addEventListener('mouseup', () => {
+            isDown = false;
+            this.track.style.cursor = 'grab';
+        });
+
+        this.track.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - this.track.offsetLeft;
+            const walk = (x - startX) * 2;
+            this.track.scrollLeft = scrollStart - walk;
+        });
+
+        // Touch events for mobile
+        this.track.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].pageX;
+            scrollStart = this.track.scrollLeft;
+        });
+
+        this.track.addEventListener('touchmove', (e) => {
+            if (!startX) return;
+            const x = e.touches[0].pageX;
+            const walk = (x - startX) * 2;
+            this.track.scrollLeft = scrollStart - walk;
+        });
+
+        this.track.addEventListener('touchend', () => {
+            startX = null;
+        });
+    }
+}
+
+// Initialize all carousels
+function initCarousels() {
+    document.querySelectorAll('.carousel-container').forEach(carousel => {
+        new Carousel(carousel);
+    });
+}
+
+// Helper function to create carousel HTML
+function createCarousel(title, subtitle, items, itemRenderer, size = 'default') {
+    const sizeClass = size !== 'default' ? size : '';
+    
+    return `
+        <section class="carousel-section">
+            <div class="carousel-header">
+                <div>
+                    <h2 class="carousel-title">${title}</h2>
+                    ${subtitle ? `<p class="carousel-subtitle">${subtitle}</p>` : ''}
+                </div>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev" aria-label="Previous">‹</button>
+                <button class="carousel-nav next" aria-label="Next">›</button>
+                <div class="carousel-track">
+                    ${items.map(item => `
+                        <div class="carousel-item ${sizeClass}">
+                            ${itemRenderer(item)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </section>
+    `;
+}
+
 // Helper function to normalize park names for sticker mapping lookup
 function normalizeParkName(parkName) {
     // Handle specific special cases first
@@ -978,7 +1110,7 @@ class ParkPassportFinder {
 
         switch(view) {
             case 'timeline':
-                this.renderTimelineView(container);
+                this.renderCarouselView(container);
                 break;
             case 'alphabetical':
                 this.renderAlphabeticalView(container);
@@ -993,6 +1125,195 @@ class ParkPassportFinder {
                 this.renderJuniorRangerView(container);
                 break;
         }
+    }
+
+    renderCarouselView(container) {
+        // Create Netflix-style carousel sections
+        const carouselsHTML = [];
+        
+        // Recent stamp sets (last 5 years)
+        const recentYears = [...this.data]
+            .sort((a, b) => b.year - a.year)
+            .slice(0, 5);
+        
+        const recentCarousel = createCarousel(
+            "Recent Stamp Sets",
+            "Discover the latest National Park passport stamps",
+            recentYears,
+            (yearData) => this.createTimelineCard(yearData),
+            'wide'
+        );
+        carouselsHTML.push(recentCarousel);
+        
+        // Popular parks (parks that appear in multiple years)
+        const parkCounts = {};
+        this.data.forEach(yearData => {
+            yearData.stamps.forEach(stamp => {
+                parkCounts[stamp.park] = (parkCounts[stamp.park] || 0) + 1;
+            });
+        });
+        
+        const popularParks = Object.entries(parkCounts)
+            .filter(([park, count]) => count > 1)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 15)
+            .map(([park]) => {
+                // Find all stamps for this park
+                const stamps = [];
+                this.data.forEach(yearData => {
+                    yearData.stamps.forEach(stamp => {
+                        if (stamp.park === park) {
+                            stamps.push({ ...stamp, year: yearData.year });
+                        }
+                    });
+                });
+                return { park, stamps };
+            });
+        
+        const popularCarousel = createCarousel(
+            "Popular Parks",
+            "National Parks featured in multiple stamp collections",
+            popularParks,
+            (parkData) => this.createParkCard(parkData)
+        );
+        carouselsHTML.push(popularCarousel);
+        
+        // National stamps
+        const nationalStamps = [];
+        this.data.forEach(yearData => {
+            const nationalStamp = yearData.stamps.find(s => s.region === 'National');
+            if (nationalStamp) {
+                nationalStamps.push({ ...nationalStamp, year: yearData.year });
+            }
+        });
+        
+        const nationalCarousel = createCarousel(
+            "National Stamps",
+            "Special commemorative stamps for significant locations",
+            nationalStamps.slice(0, 10),
+            (stamp) => this.createStampCard(stamp),
+            'compact'
+        );
+        carouselsHTML.push(nationalCarousel);
+        
+        // Western region parks
+        const westernParks = [];
+        this.data.forEach(yearData => {
+            yearData.stamps.forEach(stamp => {
+                if (stamp.region === 'Western' || stamp.region === 'Pacific Northwest & Alaska') {
+                    westernParks.push({ ...stamp, year: yearData.year });
+                }
+            });
+        });
+        
+        if (westernParks.length > 0) {
+            const westernCarousel = createCarousel(
+                "Western Adventures",
+                "Explore the majestic parks of the American West",
+                westernParks.slice(0, 12),
+                (stamp) => this.createStampCard(stamp)
+            );
+            carouselsHTML.push(westernCarousel);
+        }
+        
+        container.innerHTML = carouselsHTML.join('');
+        
+        // Initialize carousel functionality
+        setTimeout(() => initCarousels(), 100);
+    }
+    
+    createTimelineCard(yearData) {
+        const stampImage = window.getStampSetImage(yearData.year);
+        return `
+            <div class="stamp-card" onclick="window.location.hash='year/${yearData.year}'">
+                <div class="stamp-image-container">
+                    <img src="${stampImage}" 
+                         alt="${yearData.year} Stamp Set" 
+                         class="stamp-image" 
+                         loading="lazy">
+                    <div class="stamp-card-overlay">
+                        <div class="overlay-title">${yearData.year} Collection</div>
+                        <div class="overlay-subtitle">${yearData.stamps.length} parks featured</div>
+                        <div class="overlay-actions">
+                            <button class="overlay-btn" onclick="event.stopPropagation(); window.location.hash='year/${yearData.year}'">
+                                View Collection
+                            </button>
+                            <button class="overlay-btn secondary" onclick="event.stopPropagation(); window.open('${window.generatePurchaseLink(yearData.year)}', '_blank')">
+                                Buy Set
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="stamp-content">
+                    <h3 class="stamp-year">${yearData.year}</h3>
+                    <p class="stamp-region">${yearData.stamps.length} National Parks</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    createParkCard(parkData) {
+        const { park, stamps } = parkData;
+        const mostRecentYear = Math.max(...stamps.map(s => s.year));
+        const stampImage = window.getStampSetImage(mostRecentYear);
+        
+        return `
+            <div class="stamp-card" onclick="window.location.hash='park/${encodeURIComponent(park)}'">
+                <div class="stamp-image-container">
+                    <img src="${stampImage}" 
+                         alt="${park}" 
+                         class="stamp-image" 
+                         loading="lazy">
+                    <div class="stamp-card-overlay">
+                        <div class="overlay-title">${park}</div>
+                        <div class="overlay-subtitle">Featured in ${stamps.length} collections</div>
+                        <div class="overlay-actions">
+                            <button class="overlay-btn" onclick="event.stopPropagation(); window.location.hash='park/${encodeURIComponent(park)}'">
+                                View Details
+                            </button>
+                            <button class="overlay-btn secondary" onclick="event.stopPropagation(); window.open('${window.generatePurchaseLink(mostRecentYear)}', '_blank')">
+                                Buy Set
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="stamp-content">
+                    <h3 class="stamp-park">${park}</h3>
+                    <p class="stamp-region">Years: ${stamps.map(s => s.year).sort().join(', ')}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    createStampCard(stamp) {
+        const stampImage = window.getStampSetImage(stamp.year);
+        
+        return `
+            <div class="stamp-card" onclick="window.location.hash='park/${encodeURIComponent(stamp.park)}'">
+                <div class="stamp-image-container">
+                    <img src="${stampImage}" 
+                         alt="${stamp.park}" 
+                         class="stamp-image" 
+                         loading="lazy">
+                    <div class="stamp-card-overlay">
+                        <div class="overlay-title">${stamp.park}</div>
+                        <div class="overlay-subtitle">${stamp.region} • ${stamp.year}</div>
+                        <div class="overlay-actions">
+                            <button class="overlay-btn" onclick="event.stopPropagation(); window.location.hash='park/${encodeURIComponent(stamp.park)}'">
+                                View Details
+                            </button>
+                            <button class="overlay-btn secondary" onclick="event.stopPropagation(); window.open('${window.generatePurchaseLink(stamp.year)}', '_blank')">
+                                Buy Set
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="stamp-content">
+                    <h3 class="stamp-park">${stamp.park}</h3>
+                    <p class="stamp-region">${stamp.region} • ${stamp.year}</p>
+                </div>
+            </div>
+        `;
     }
 
     renderTimelineView(container) {
