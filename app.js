@@ -1,5 +1,59 @@
 console.log('[DEBUG] app.js loaded');
 
+// Theme Management System
+class ThemeManager {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.loadTheme();
+        this.setupThemeToggle();
+        // Remove preload class to enable transitions
+        setTimeout(() => {
+            document.body.classList.remove('preload');
+        }, 100);
+    }
+
+    loadTheme() {
+        // Check localStorage first, then system preference
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        
+        this.setTheme(theme);
+    }
+
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        // Update button state
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.setAttribute('aria-label', 
+                theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+            );
+        }
+    }
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        this.setTheme(newTheme);
+    }
+
+    setupThemeToggle() {
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => this.toggleTheme());
+        }
+    }
+}
+
+// Initialize theme manager
+const themeManager = new ThemeManager();
+
 // Helper function to normalize park names for sticker mapping lookup
 function normalizeParkName(parkName) {
     // Handle specific special cases first
