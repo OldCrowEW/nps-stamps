@@ -102,6 +102,45 @@
     --breakpoint-2xl: 1536px;
 }
 
+/* Dark Mode Theme Variables */
+[data-theme="dark"] {
+    /* Core Colors - Dark Mode */
+    --primary-green: #6fa343;
+    --light-green: #8bc34a;
+    --accent-green: #9ccc65;
+    --accent-color: #9ccc65;
+    --accent-color-dark: #6fa343;
+    
+    /* Background Colors - Dark Mode */
+    --bg-light: #1a1a1a;
+    --bg-dark: #0d0d0d;
+    --bg-white: #141414;
+    --bg-overlay: rgba(0, 0, 0, 0.95);
+    --bg-overlay-light: rgba(20, 20, 20, 0.95);
+    
+    /* Text Colors - Dark Mode */
+    --text-dark: #e4e4e4;
+    --text-gray: #a0a0a0;
+    --text-secondary: #b0b0b0;
+    --text-light: #f0f0f0;
+    --text-muted: #808080;
+    
+    /* Border Colors - Dark Mode */
+    --border-color: #2a2a2a;
+    --border-light: rgba(255, 255, 255, 0.05);
+    --border-dark: rgba(255, 255, 255, 0.1);
+    
+    /* Shadows - Dark Mode */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.7);
+    --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 20px rgba(156, 204, 101, 0.3);
+}
+
 /* Animation Keyframes Library */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -1859,4 +1898,74 @@ footer a:hover {
 
 .individual-sticker-browse-item:hover .sticker-browse-info h4 {
     color: var(--accent-green);
-} 
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    padding: var(--space-xs);
+    cursor: pointer;
+    transition: var(--transition-color);
+    margin-left: var(--space-md);
+    width: 48px;
+    height: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.theme-toggle-track {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--bg-light);
+    transition: var(--transition);
+}
+
+.theme-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    transition: var(--transition-transform);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: white;
+}
+
+[data-theme="dark"] .theme-toggle-thumb {
+    transform: translateX(20px);
+}
+
+.theme-toggle-thumb::before {
+    content: "☀️";
+}
+
+[data-theme="dark"] .theme-toggle-thumb::before {
+    content: "🌙";
+}
+
+/* Smooth theme transitions */
+* {
+    transition: background-color var(--duration-normal) ease,
+                color var(--duration-normal) ease,
+                border-color var(--duration-normal) ease;
+}
+
+/* Prevent transition on initial load */
+.preload * {
+    transition: none !important;
+}

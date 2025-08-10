@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <meta name="description" content="Find which Passport To Your National Parks® stamp set contains your favorite park. Search by park name, year, or region.">
 </head>
-<body>
+<body class="preload">
     <header>
         <div class="container">
             <h1><a href="#" style="color: white; text-decoration: none;">Park Passport Finder</a></h1>
@@ -15,6 +15,11 @@
             <nav class="header-nav">
                 <a href="#series" data-route="series">Series Overview</a>
                 <a href="#" data-route="">Browse All</a>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <div class="theme-toggle-track">
+                        <div class="theme-toggle-thumb"></div>
+                    </div>
+                </button>
             </nav>
         </div>
     </header>
