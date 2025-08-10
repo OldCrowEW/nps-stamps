@@ -431,6 +431,7 @@ h1 {
     overflow-y: auto;
     box-shadow: var(--shadow-md);
     z-index: 100;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
 }
 
 .search-history-header {
@@ -470,6 +471,8 @@ h1 {
     align-items: center;
     gap: 0.75rem;
     font-size: 0.95rem;
+    min-height: 44px; /* Minimum touch target size for mobile */
+    -webkit-tap-highlight-color: rgba(111, 163, 67, 0.1); /* Mobile tap highlight */
 }
 
 .search-history-item:hover {
@@ -546,6 +549,8 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: 44px; /* Minimum touch target size for mobile */
+    -webkit-tap-highlight-color: rgba(111, 163, 67, 0.1); /* Mobile tap highlight */
 }
 
 .suggestion-main {
